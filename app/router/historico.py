@@ -1,0 +1,77 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+from typing import List
+
+from app.schemas.historico import CrearHistorico, EditarHistorico, RetornoHistorico
+from core.database import get_db
+from app.crud import historico as crud_historico
+
+router = APIRouter()
+
+
+@router.post("/crear", status_code=status.HTTP_201_CREATED)
+def create_historico(historico: CrearHistorico, db: Session = Depends(get_db)):
+    try:
+        crear = crud_historico.create_historico(db, historico)
+        if crear:
+            return {"message": "Historico creado correctamente"}
+        else:
+            return {"message": "El Historico no pudo ser creado correctamente"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/obtener-por-id/{id_historico}", status_code=status.HTTP_200_OK)
+def get_by_id(id_historico: int, db: Session = Depends(get_db)):
+    try:
+        historico = crud_historico.get_historico_by_id(db, id_historico)
+        if historico is None:
+            raise HTTPException(status_code=404, detail="Historico no encontrado")
+        return historico
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/obtener-todos", status_code=status.HTTP_200_OK)
+def get_all(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    try:
+        historicos = crud_historico.get_all_historicos(db, skip=skip, limit=limit)
+        return historicos
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/obtener-por-grupo/{id_grupo}", status_code=status.HTTP_200_OK)
+def get_by_grupo(id_grupo: int, db: Session = Depends(get_db)):
+    try:
+        historicos = crud_historico.get_historicos_by_grupo(db, id_grupo)
+        if not historicos:
+            raise HTTPException(status_code=404, detail="No se encontraron historicos para este grupo")
+        return historicos
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/eliminar-por-id/{id_historico}", status_code=status.HTTP_200_OK)
+def delete_by_id(id_historico: int, db: Session = Depends(get_db)):
+    try:
+        resultado = crud_historico.historico_delete(db, id_historico)
+        if resultado:
+            return {"message": "Historico eliminado correctamente"}
+        else:
+            raise HTTPException(status_code=404, detail="Historico no encontrado")
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/editar/{historico_id}", status_code=status.HTTP_200_OK)
+def update_historico(historico_id: int, historico: EditarHistorico, db: Session = Depends(get_db)):
+    try:
+        success = crud_historico.update_historico(db, historico_id, historico)
+        if not success:
+            raise HTTPException(status_code=400, detail="No se pudo actualizar el historico")
+        return {"message": "Historico actualizado correctamente"}
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
