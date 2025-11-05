@@ -27,3 +27,29 @@ CREATE TABLE historico(
     num_aprendices_trasladados SMALLINT,
     FOREIGN KEY (id_grupo) REFERENCES grupos(id_grupo)
 );
+
+
+-- Tabla estado_de_normas
+DROP TABLE IF EXISTS estado_de_normas;
+CREATE TABLE estado_de_normas(
+    cod_programa MEDIUMINT AUTO_INCREMENT PRIMARY KEY,
+    cod_version VARCHAR(50),
+    fecha_elaboracion DATE,
+    anio SMALLINT,
+    red_conocimiento VARCHAR(50),
+    nombre_ncl VARCHAR(255),
+    cod_ncl INT,
+    ncl_version SMALLINT,
+    norma_corte_noviembre VARCHAR(255),
+    verion INT,
+    norma_version VARCHAR(255),
+    mesa_sectorial VARCHAR(255),
+    tipo_norma VARCHAR(255),
+    observacion VARCHAR(255),
+    fecha_revision DATE,
+    tipo_competencia VARCHAR(50),
+    vigencia VARCHAR(20),
+    fecha_indice VARCHAR(50)
+);
+
+

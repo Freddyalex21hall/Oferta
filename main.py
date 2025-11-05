@@ -1,12 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.router import historico
+from app.router import estado_de_normas
 # from app.router import centros
 
 app = FastAPI()
 
 # Incluir en el objeto app los routers
 app.include_router(historico.router, prefix="/historico", tags=["servicios historico"])
+app.include_router(estado_de_normas.router, prefix="/estado_de_normas", tags=["estado_de_normas"])
 # app.include_router(centros.router, prefix="/centro", tags=["servicios de Centros de Formación"])
 
 # Configuración de CORS para permitir todas las solicitudes desde cualquier origen
