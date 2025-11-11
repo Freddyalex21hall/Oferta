@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.router import estado_normas, programas_formacion
 
 app = FastAPI(
     title="API Análisis de Datos SENA Risaralda",
@@ -16,17 +15,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(
-    estado_normas.router,
-    prefix="/estado-normas",
-    tags=["Estado de Normas"]
-)
-
-app.include_router(
-    programas_formacion.router,
-    prefix="/programas-formacion",
-    tags=["Programas de Formación"]
-)
 
 @app.get("/")
 def read_root():
