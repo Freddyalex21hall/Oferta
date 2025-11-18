@@ -133,3 +133,61 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
         "errores": errores,
         "mensaje": "Carga completada con errores" if errores else "Carga completada exitosamente"
     }
+
+
+def insertar_estado_normas(db: Session, df_normas):
+    """Inserta registros en la tabla `estado_de_normas` desde un DataFrame.
+
+    Se espera que las columnas del DataFrame estén renombradas acorde al schema:
+    cod_programa, cod_version, fecha_elaboracion, anio, red_conocimiento,
+    nombre_ncl, cod_ncl, ncl_version, norma_corte_noviembre, version,
+    norma_version, mesa_sectorial, tipo_norma, observacion, fecha_revision,
+    tipo_competencia, vigencia, fecha_indice
+    """
+    insert_sql = text("""
+        INSERT INTO estado_de_normas (
+            cod_programa, cod_version, fecha_elaboracion, anio, red_conocimiento,
+            nombre_ncl, cod_ncl, ncl_version, norma_corte_noviembre,
+            version, norma_version, mesa_sectorial, tipo_norma,
+            observacion, fecha_revision, tipo_competencia, vigencia, fecha_indice
+        ) VALUES (
+            :cod_programa, :cod_version, :fecha_elaboracion, :anio, :red_conocimiento,
+            :nombre_ncl, :cod_ncl, :ncl_version, :norma_corte_noviembre,
+            :version, :norma_version, :mesa_sectorial, :tipo_norma,
+            :observacion, :fecha_revision, :tipo_competencia, :vigencia, :fecha_indice
+        )
+    """)
+
+    insertados = 0
+    errores = []
+    for idx, row in df_normas.iterrows():
+        try:
+            data = {}
+            for col in [
+                "cod_programa", "cod_version", "fecha_elaboracion", "anio", "red_conocimiento",
+                "nombre_ncl", "cod_ncl", "ncl_version", "norma_corte_noviembre",
+                "version", "norma_version", "mesa_sectorial", "tipo_norma",
+                "observacion", "fecha_revision", "tipo_competencia", "vigencia", "fecha_indice"
+            ]:
+                v = row.get(col)
+                # convertir fechas a date si vienen como datetime
+                if isinstance(v, datetime.datetime):
+                    v = v.date()
+                data[col] = None if v is None or (isinstance(v, float) and v != v) else v
+
+            db.execute(insert_sql, data)
+            insertados += 1
+        except SQLAlchemyError as e:
+            db.rollback()
+            msg = f"Error insertar norma índice {idx}: {e}"
+            errores.append(msg)
+            logger.error(msg)
+
+    try:
+        db.commit()
+    except SQLAlchemyError as e:
+        db.rollback()
+        errores.append(f"Error al confirmar normas: {e}")
+        logger.error(f"Error al confirmar normas: {e}")
+
+    return {"insertados": insertados, "errores": errores}

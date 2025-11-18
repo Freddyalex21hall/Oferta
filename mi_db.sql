@@ -23,6 +23,31 @@ CREATE TABLE programas_formacion (
   programa_especial MEDIUMINT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla 'grupo' que relaciona fichas/grupos con programas_formacion (n:1 -> cod_programa)
+CREATE TABLE grupo (
+  ficha integer NOT NULL PRIMARY KEY,
+  cod_centro INT NOT NULL,
+  cod_programa MEDIUMINT UNSIGNED NOT NULL,
+  la_version VARCHAR(50),
+  estado_grupo VARCHAR(100),
+  nombre_nivel VARCHAR(100),
+  jornada VARCHAR(100),
+  fecha_inicio DATE,
+  fecha_fin DATE,
+  etapa VARCHAR(100),
+  modalidad VARCHAR(100),
+  responsable VARCHAR(255),
+  nombre_empresa VARCHAR(255),
+  nombre_municipio VARCHAR(150),
+  nombre_programa_especial VARCHAR(255),
+  hora_inicio TIME,
+  hora_fin TIME,
+  aula_actual VARCHAR(100),
+  CONSTRAINT fk_grupo_programa FOREIGN KEY (cod_programa)
+    REFERENCES programas_formacion(cod_programa)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE estado_de_normas (
   id_estado_norma MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   cod_programa MEDIUMINT UNSIGNED NOT NULL,
@@ -48,6 +73,31 @@ CREATE TABLE estado_de_normas (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+Table grupos{
+	ficha integer PRIMARY KEY integer unique
+	cod_programa mediumint
+	cod_centro smallint
+	modalidad varchar
+	jornada varchar
+	etapa_ficha varchar
+	estado_curso varchar
+	fecha_inicio date
+	fecha_fin date
+	cod_municipio char
+	nombre_responsable varchar
+	cupo_asignado smallint
+	num_aprendices_fem smallint
+	num_aprendices_mas smallint
+	num_aprendices_nobin smallint
+	num_aprendices_matriculados smallint
+	num_aprendices_activos smallint
+	id_historico integer
+	tipo_doc_empresa char
+	num_doc_empresa varchar
+	nombre_empresa varchar
+	nombre_estrategia varchar
+}
 
 INSERT INTO rol (nombre_rol) VALUES 
 ('Administrador'),
