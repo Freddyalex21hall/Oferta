@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `centros_formacion` (
 );
 
 CREATE TABLE IF NOT EXISTS `municipios` (
-	`cod_municipio` CHAR(5) NOT NULL UNIQUE,
+	`cod_municipio` CHAR(10) NOT NULL UNIQUE,
 	`nombre` VARCHAR(80),
 	PRIMARY KEY(`cod_municipio`)
 );
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `grupos` (
 	`estado_curso` VARCHAR(80),
 	`fecha_inicio` DATE,
 	`fecha_fin` DATE,
-	`cod_municipio` CHAR(5),
+	`cod_municipio` CHAR(10),
 	`cod_estrategia` CHAR(5),
 	`nombre_responsable` VARCHAR(150),
 	`cupo_asignado` SMALLINT UNSIGNED,
