@@ -14,7 +14,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Incluir en el objeto app los routers
 app.include_router(usuarios.router, prefix="/usuario", tags=["servicios usuarios"])
 app.include_router(auth.router, prefix="/access", tags=["servicios de autenticación"])
-app.include_router(cargar_archivos.router, prefix="/cargar", tags=["Cargar archivos"])
 app.include_router(cargar_archivos_historico.router, prefix="/cargar", tags=["Cargar archivos histórico"])
 app.include_router(historico.router, prefix="/historico", tags=["servicios histórico"])
 app.include_router(programas.router)
