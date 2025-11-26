@@ -12,7 +12,7 @@ router = APIRouter(prefix="/estado_normas", tags=["Estado Normas"])
 
 @router.post("/crear", status_code=status.HTTP_201_CREATED)
 def crear(norma: CrearEstadoNorma, db: Session = Depends(get_db)):
-    # Opcional: validar que existe el programa antes de insertar (mejor práctica)
+    # Opcional: validar que existe el programa antes de insertar
     if crear_estado_norma(db, norma):
         return {"message": "Norma creada correctamente"}
     raise HTTPException(status_code=500, detail="Error al crear norma")
