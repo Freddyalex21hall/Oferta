@@ -8,6 +8,8 @@ from app.router import cargar_archivos
 from app.router import programas
 from app.router import historico
 from app.router import cargar_archivos_historico
+from app.router import registro_calificado
+from app.router import cargar_archivos_registro_calificado
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -18,6 +20,8 @@ app.include_router(cargar_archivos.router, prefix="/cargar", tags=["Cargar archi
 app.include_router(cargar_archivos_historico.router, prefix="/cargar", tags=["Cargar archivos histórico"])
 app.include_router(historico.router, prefix="/historico", tags=["servicios histórico"])
 app.include_router(programas.router)
+app.include_router(registro_calificado.router, prefix="/registro_calificado", tags=["servicios registro calificado"])
+app.include_router(cargar_archivos_registro_calificado.router, prefix="/cargar", tags=["Cargar archivos registro calificado"])
 # Configuración de CORS para permitir todas las solicitudes desde cualquier origen
 app.add_middleware(
     CORSMiddleware,

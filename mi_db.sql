@@ -108,3 +108,21 @@ CREATE TABLE historico(
     num_aprendices_trasladados SMALLINT,
     FOREIGN KEY (id_grupo) REFERENCES grupos(ficha)
 );
+
+CREATE TABLE IF NOT EXISTS `registro_calificado` (
+	`cod_programa` MEDIUMINT UNSIGNED NOT NULL,
+	`tipo_tramite` VARCHAR(50),
+	`fecha_radicado` DATE,
+	`numero_resolucion` MEDIUMINT,
+	`fecha_resolucion` DATE,
+	`fecha_vencimiento` DATE,
+	`vigencia` VARCHAR(25),
+	`modalidad` VARCHAR(25),
+	`clasificacion` VARCHAR(15),
+	`estado_catalogo` VARCHAR(50),
+	PRIMARY KEY (`cod_programa`),
+	FOREIGN KEY (`cod_programa`)
+		REFERENCES `programas_formacion`(`cod_programa`)
+		ON UPDATE NO ACTION
+		ON DELETE NO ACTION
+);
