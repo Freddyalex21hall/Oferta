@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import Optional, List
 import logging
 
-from app.schemas.historico import EditarHistorico, RetornoHistorico
+from app.schemas.historico import EditarHistorico
 
 logger = logging.getLogger(__name__)
 
