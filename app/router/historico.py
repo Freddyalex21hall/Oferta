@@ -3,30 +3,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List
 
-from app.schemas.historico import CrearHistorico, EditarHistorico, RetornoHistorico
+from app.schemas.historico import EditarHistorico, RetornoHistorico
 from core.database import get_db
 from app.crud import historico as crud_historico
 from app.router.dependencies import get_current_user
 from app.schemas.usuarios import RetornoUsuario
 
 router = APIRouter()
-
-
-@router.post("/crear", status_code=status.HTTP_201_CREATED)
-def create_historico(
-    historico: CrearHistorico, 
-    db: Session = Depends(get_db),
-    user_token: RetornoUsuario = Depends(get_current_user)
-):
-    try:
-        crear = crud_historico.create_historico(db, historico)
-        if crear:
-            return {"message": "Historico creado correctamente"}
-        else:
-            return {"message": "El Historico no pudo ser creado correctamente"}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/obtener-por-id/{id_historico}", status_code=status.HTTP_200_OK)
@@ -88,22 +71,6 @@ def get_by_ficha(
         if historico is None:
             raise HTTPException(status_code=404, detail="No se encontró histórico para esta ficha")
         return historico
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.delete("/eliminar-por-id/{id_historico}", status_code=status.HTTP_200_OK)
-def delete_by_id(
-    id_historico: int, 
-    db: Session = Depends(get_db),
-    user_token: RetornoUsuario = Depends(get_current_user)
-):
-    try:
-        resultado = crud_historico.historico_delete(db, id_historico)
-        if resultado:
-            return {"message": "Historico eliminado correctamente"}
-        else:
-            raise HTTPException(status_code=404, detail="Historico no encontrado")
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
 

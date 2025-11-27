@@ -1,7 +1,7 @@
-DROP DATABASE IF EXISTS mi_proyecto_f;
-CREATE DATABASE mi_proyecto_f CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+DROP DATABASE IF EXISTS railway;
+CREATE DATABASE oferta_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE mi_proyecto_f;
+USE oferta_db;
 
 CREATE TABLE rol(
     id_rol SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -42,18 +42,41 @@ CREATE TABLE IF NOT EXISTS `estrategia` (
 	PRIMARY KEY(`cod_estrategia`)
 );
 
-CREATE TABLE IF NOT EXISTS `programas_formacion` (
-	`cod_programa` MEDIUMINT UNSIGNED NOT NULL UNIQUE,
-	`version` CHAR(4),
-	`nombre` VARCHAR(200),
-	`nivel` VARCHAR(70),
-	`id_red` INTEGER UNSIGNED,
-	`tiempo_duracion` SMALLINT UNSIGNED,
-	`unidad_medida` VARCHAR(50),
-	`estado` BOOLEAN,
-	`url_pdf` VARCHAR(180),
-	PRIMARY KEY(`cod_programa`)
+CREATE TABLE programas_formacion (
+    `cod_programa` VARCHAR(16) PRIMARY KEY,        -- PRF_CODIGO
+    `cod_version` VARCHAR(20),                    -- cod_VERSION
+    `PRF_version` TINYINT UNSIGNED,                    -- PRF_VERSION
+    `tipo_formacion` VARCHAR(30),                    -- TIPO DE FORMACION
+    `nombre_programa` VARCHAR(255) NOT NULL,          -- PRF_DENOMINACION
+    `nivel_formacion` VARCHAR(30),                    -- NIVEL DE FORMACION
+    `duracion_maxima` SMALLINT UNSIGNED,                       -- PRF_DURACION_MAXIMA
+    `dur_etapa_lectiva` SMALLINT UNSIGNED,                       -- PRF_DUR_ETAPA_LECTIVA
+    `dur_etapa_productiva` SMALLINT UNSIGNED,                       -- PRF_DUR_ETAPA_PROD
+    `fecha_registro` DATE,                           -- PRF_FCH_REGISTRO
+    `fecha_activo` DATE,                           -- Fecha Activo (En Ejecución)
+    `edad_min_requerida` CHAR(2),                       -- PRF_EDAD_MIN_REQUERIDA
+    `grado_min_requerido` VARCHAR(50),                    -- PRF_GRADO_MIN_REQUERIDO
+    `descripcion_req` TEXT,                           -- PRF_DESCRIPCION_REQUISITO
+    `resolucion` VARCHAR(250),                    -- PRF_RESOLUCION
+    `fecha_resolucion` DATE,                           -- PRF_FECHA_RESOLUCION
+    `apoyo_fic` VARCHAR(2),                     -- PRF_APOYO_FIC
+    `creditos` TINYINT UNSIGNED,                            -- PRF_CREDITOS
+    `alamedida` VARCHAR(2),                     -- PRF_ALAMEDIDA
+    `linea_tecnologica` VARCHAR(50),                   -- Linea Tecnológica
+    `red_tecnologica`  VARCHAR(80),                   -- Red Tecnológica
+    `red_conocimiento` VARCHAR(80),                   -- Red de Conocimiento
+    `modalidad` VARCHAR(30),                    -- Modalidad
+    `apuestas_prioritarias` VARCHAR(80),                  -- Apuestas Prioritarias
+    `fic` VARCHAR(2),                     -- FIC (NO/SI)
+    `tipo_permiso` VARCHAR(30),                    -- TIPO PERMISO
+    `multiple_inscripcion` VARCHAR(2),                     -- Multiple Inscripcion
+    `indice` VARCHAR(20),                    -- Indice
+    `ocupacion` VARCHAR(60),                   -- Ocupación
+    `estado` BOOLEAN,
+    `url_pdf` VARCHAR(250),
+    INDEX idx_nivel_modalidad (`nivel_formacion`, `modalidad`)
 );
+
 
 
 CREATE TABLE IF NOT EXISTS `grupos` (
@@ -89,7 +112,7 @@ CREATE TABLE IF NOT EXISTS `grupos` (
     ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
-CREATE TABLE historico(
+CREATE TABLE IF NOT EXISTS `historico`(
     id_historico INT AUTO_INCREMENT PRIMARY KEY,
     id_grupo INTEGER UNSIGNED NOT NULL,  -- Cambiado de INT a INTEGER UNSIGNED
     num_aprendices_inscritos SMALLINT,
@@ -107,4 +130,46 @@ CREATE TABLE historico(
     num_aprendices_certificados SMALLINT,
     num_aprendices_trasladados SMALLINT,
     FOREIGN KEY (id_grupo) REFERENCES grupos(ficha)
+);
+CREATE TABLE estado_de_normas (
+	id_estado_norma MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	cod_programa MEDIUMINT UNSIGNED NOT NULL,
+	cod_version VARCHAR(50) NOT NULL,
+	fecha_elaboracion DATE NOT NULL,
+	anio SMALLINT NOT NULL,
+	red_conocimiento VARCHAR(150),
+	nombre_ncl VARCHAR(150),
+	cod_ncl INT,
+	ncl_version SMALLINT,
+	norma_corte_noviembre VARCHAR(150),
+	version INT,
+	norma_version VARCHAR(100),
+	mesa_sectorial VARCHAR(150),
+	tipo_norma VARCHAR(80),
+	observacion VARCHAR(255),
+	fecha_revision DATE,
+	tipo_competencia VARCHAR(80),
+	vigencia VARCHAR(80),
+	fecha_indice VARCHAR(80),
+	CONSTRAINT fk_programa_norma FOREIGN KEY (cod_programa)
+		REFERENCES programas_formacion(cod_programa)
+		ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS `registro_calificado` (
+	`cod_programa` MEDIUMINT UNSIGNED NOT NULL,
+	`tipo_tramite` VARCHAR(50),
+	`fecha_radicado` DATE,
+	`numero_resolucion` MEDIUMINT,
+	`fecha_resolucion` DATE,
+	`fecha_vencimiento` DATE,
+	`vigencia` VARCHAR(25),
+	`modalidad` VARCHAR(25),
+	`clasificacion` VARCHAR(15),
+	`estado_catalogo` VARCHAR(50),
+	PRIMARY KEY (`cod_programa`),
+	FOREIGN KEY (`cod_programa`)
+		REFERENCES `programas_formacion`(`cod_programa`)
+		ON UPDATE NO ACTION
+		ON DELETE NO ACTION
 );

@@ -2,11 +2,13 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 import pandas as pd
 from sqlalchemy.orm import Session
 from io import BytesIO
+import logging
 from app.crud.cargar_archivos_historico import insertar_historico_completo_en_bd
 from core.database import get_db
 from app.router.dependencies import get_current_user
 from app.schemas.usuarios import RetornoUsuario
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/upload-excel-historico/")
@@ -284,6 +286,46 @@ async def upload_excel_historico(
     print("\nDataFrame procesado:")
     print(df.head())
     print("Columnas finales:", df.columns.tolist())
+
+    # Filtrar solo registros con cod_municipio que contenga "66"
+    if "cod_municipio" in df.columns:
+        registros_originales = len(df)
+        
+        # Convertir cod_municipio a string para verificar si contiene "66"
+        # Manejar valores NaN y numéricos correctamente (puede ser int, float o string)
+        df["cod_municipio_str"] = df["cod_municipio"].apply(
+            lambda x: str(x).replace(".0", "") if pd.notna(x) else ""
+        )
+        # Filtrar filas donde cod_municipio contenga "66" (excluyendo valores vacíos/NaN)
+        df_filtrado = df[df["cod_municipio_str"].str.contains("66", na=False)]
+        
+        # Eliminar la columna temporal
+        df_filtrado = df_filtrado.drop(columns=["cod_municipio_str"])
+        
+        registros_filtrados = len(df_filtrado)
+        registros_omitidos = registros_originales - registros_filtrados
+        
+        logger.info(
+            f"Filtro de municipio aplicado: {registros_originales} registros originales, "
+            f"{registros_filtrados} con cod_municipio que contiene '66', "
+            f"{registros_omitidos} omitidos"
+        )
+        
+        if len(df_filtrado) == 0:
+            return {
+                "registros_insertados": 0,
+                "registros_actualizados": 0,
+                "grupos_creados": 0,
+                "total_errores": 1,
+                "errores": [f"No se encontraron registros con cod_municipio que contenga '66'. Se omitieron {registros_omitidos} registros."],
+                "exitoso": False,
+                "mensaje": f"No hay registros válidos para procesar. Se omitieron {registros_omitidos} registros que no cumplen el criterio de municipio."
+            }
+        
+        df = df_filtrado
+        print(f"\nFiltro aplicado: {registros_omitidos} registros omitidos, {registros_filtrados} registros válidos")
+    else:
+        logger.warning("No se encontró la columna cod_municipio en el DataFrame. No se aplicó filtro.")
 
     # Insertar/actualizar grupos e histórico
     resultados = insertar_historico_completo_en_bd(db, df)
