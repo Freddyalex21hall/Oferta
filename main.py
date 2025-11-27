@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.router import estado_normas, programas_formacion
+from app.router import cargar_archivos, estado_normas, programas_formacion
 
 app = FastAPI(
     title="API Análisis de Datos SENA Risaralda",
@@ -18,7 +18,7 @@ app.add_middleware(
 
 app.include_router(
     estado_normas.router,
-    prefix="/estado-normas",
+    prefix="/estado_normas",
     tags=["Estado de Normas"]
 )
 
@@ -26,6 +26,12 @@ app.include_router(
     programas_formacion.router,
     prefix="/programas-formacion",
     tags=["Programas de Formación"]
+)
+
+app.include_router(
+    cargar_archivos.router,
+    prefix="/cargar-archivos",
+    tags=["cargar archivos"]  
 )
 
 @app.get("/")

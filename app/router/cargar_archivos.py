@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, UploadFile, File, Depends
 import pandas as pd
 from sqlalchemy.orm import Session
@@ -6,43 +5,32 @@ from io import BytesIO
 from app.crud.cargar_archivos import insertar_datos_en_bd, insertar_estado_normas
 from core.database import get_db
 
-router = APIRouter()
-
+router = APIRouter(prefix="/cargar-archivos", tags=["cargar archivos"])
 
 @router.post("/upload-excel-pe04/")
 async def upload_excel(
     file: UploadFile = File(...),
-    tipo: str = "grupos",  # 'grupos' (por defecto) o 'normas'
+    tipo: str = "grupos",
     db: Session = Depends(get_db)
 ):
     contents = await file.read()
 
-    if tipo == "normas":
-        usecols = [
-            "COD_PROGRAMA", "COD_VERSION", "FECHA_ELABORACION", "ANIO", "RED_CONOCIMIENTO",
-            "NOMBRE_NCL", "COD_NCL", "NCL_VERSION", "NORMA_CORTE_NOVIEMBRE",
-            "VERSION", "NORMA_VERSION", "MESA_SECTORIAL", "TIPO_NORMA",
-            "OBSERVACION", "FECHA_REVISION", "TIPO_COMPETENCIA", "VIGENCIA", "FECHA_INDICE"
-        ]
-        skiprows = 0
-    else:
-        usecols = ["IDENTIFICADOR_FICHA", "CODIGO_CENTRO", "CODIGO_PROGRAMA", "VERSION_PROGRAMA", "NOMBRE_PROGRAMA_FORMACION", "ESTADO_CURSO", "NIVEL_FORMACION", "NOMBRE_JORNADA", "FECHA_INICIO_FICHA", "FECHA_TERMINACION_FICHA", "ETAPA_FICHA", "MODALIDAD_FORMACION", "NOMBRE_RESPONSABLE", "NOMBRE_EMPRESA", "NOMBRE_MUNICIPIO_CURSO", "NOMBRE_PROGRAMA_ESPECIAL"]
-        skiprows = 4
-
+    # Leer el Excel sin restricciones de columnas
     df = pd.read_excel(
         BytesIO(contents),
         engine="openpyxl",
-        skiprows=skiprows,
-        usecols=usecols,
         dtype=str
     )
-    print(df.head())
-    print(df.columns)
-    print(df.dtypes)
 
-    # Renombrar columnas según el tipo de carga
+    # Normalizar encabezados (quita espacios, mayúsculas)
+    df.columns = df.columns.str.strip().str.upper()
+
+    print("\nCOLUMNAS ENCONTRADAS EN EL EXCEL:")
+    print(df.columns.tolist(), "\n")
+
     if tipo == "normas":
-        df = df.rename(columns={
+
+        mapping_normas = {
             "COD_PROGRAMA": "cod_programa",
             "COD_VERSION": "cod_version",
             "FECHA_ELABORACION": "fecha_elaboracion",
@@ -61,71 +49,77 @@ async def upload_excel(
             "TIPO_COMPETENCIA": "tipo_competencia",
             "VIGENCIA": "vigencia",
             "FECHA_INDICE": "fecha_indice",
-        })
-    else:
-        df = df.rename(columns={
-            "IDENTIFICADOR_FICHA": "cod_ficha",
-            "CODIGO_CENTRO": "cod_centro",
-            "CODIGO_PROGRAMA": "cod_programa",
-            "VERSION_PROGRAMA": "la_version",
-            "ESTADO_CURSO": "estado_grupo",
-            "NIVEL_FORMACION": "nombre_nivel",
-            "NOMBRE_JORNADA": "jornada",
-            "FECHA_INICIO_FICHA": "fecha_inicio",
-            "FECHA_TERMINACION_FICHA": "fecha_fin",
-            "ETAPA_FICHA": "etapa",
-            "MODALIDAD_FORMACION": "modalidad",
-            "NOMBRE_RESPONSABLE": "responsable",
-            "NOMBRE_EMPRESA": "nombre_empresa",
-            "NOMBRE_MUNICIPIO_CURSO": "nombre_municipio",
-            "NOMBRE_PROGRAMA_ESPECIAL": "nombre_programa_especial",
-            "NOMBRE_PROGRAMA_FORMACION": "nombre"
-        })
+        }
 
-    print(df.head())
+        df = df.rename(columns={k: v for k, v in mapping_normas.items() if k in df.columns})
 
-    # si quieren que funcione en todos los centros de pais 
-    # crear codigo para llenar regionales centros y eliminar la siguiente linea.
-    # df = df[df["cod_centro"] == '9121']
+        return insertar_estado_normas(db, df)
 
-    print(df.head())
+    # ============================================================
+    #        PROCESAMIENTO DE GRUPOS PE04 (CARGA PRINCIPAL)
+    # ============================================================
 
-    # Si es carga de normas, llamar al CRUD específico
-    if tipo == "normas":
-        resultados = insertar_estado_normas(db, df)
-        return resultados
+    mapping_grupos = {
+        "IDENTIFICADOR_FICHA": "cod_ficha",
+        "CODIGO_CENTRO": "cod_centro",
+        "CODIGO_PROGRAMA": "cod_programa",
+        "VERSION_PROGRAMA": "la_version",
+        "NOMBRE_PROGRAMA_FORMACION": "nombre",
+        "ESTADO_CURSO": "estado_grupo",
+        "NIVEL_FORMACION": "nombre_nivel",
+        "NOMBRE_JORNADA": "jornada",
+        "FECHA_INICIO_FICHA": "fecha_inicio",
+        "FECHA_TERMINACION_FICHA": "fecha_fin",
+        "ETAPA_FICHA": "etapa",
+        "MODALIDAD_FORMACION": "modalidad",
+        "NOMBRE_RESPONSABLE": "responsable",
+        "NOMBRE_EMPRESA": "nombre_empresa",
+        "NOMBRE_MUNICIPIO_CURSO": "nombre_municipio",
+        "NOMBRE_PROGRAMA_ESPECIAL": "nombre_programa_especial"
+    }
 
-    # Eliminar filas con valores faltantes en campos obligatorios
+    # Renombrar solo columnas que existan en el archivo
+    df = df.rename(columns={k: v for k, v in mapping_grupos.items() if k in df.columns})
+
+    # Campos obligatorios
     required_fields = [
-        "cod_ficha", "cod_centro", "cod_programa", "la_version", "nombre", 
-        "fecha_inicio", "fecha_fin", "etapa", "responsable", "nombre_municipio"
+        "cod_ficha", "cod_centro", "cod_programa", "la_version",
+        "nombre", "fecha_inicio", "fecha_fin",
+        "etapa", "responsable", "nombre_municipio"
     ]
+
+    # Verificar si faltan columnas críticas
+    faltantes = [col for col in required_fields if col not in df.columns]
+    if faltantes:
+        return {
+            "error": "Algunas columnas obligatorias no existen en el Excel",
+            "faltantes": faltantes,
+            "columnas_en_excel": df.columns.tolist()
+        }
+
+    # Eliminar filas incompletas
     df = df.dropna(subset=required_fields)
 
-    # Convertir columnas a tipo numérico
+    # Convertir columnas numéricas
     for col in ["cod_ficha", "cod_programa", "la_version", "cod_centro"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
-
-    print(df.head())  # paréntesis
-    print(df.dtypes)
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
 
     # Convertir fechas
     df["fecha_inicio"] = pd.to_datetime(df["fecha_inicio"], errors="coerce").dt.date
     df["fecha_fin"] = pd.to_datetime(df["fecha_fin"], errors="coerce").dt.date
 
-    # Asegurar columnas no proporcionadas
+    # Valores adicionales
     df["hora_inicio"] = "00:00:00"
     df["hora_fin"] = "00:00:00"
     df["aula_actual"] = ""
 
-    # Crear DataFrame de programas únicos (sin columnas no usadas por el CRUD)
+    # Programas únicos
     df_programas = df[["cod_programa", "la_version", "nombre"]].drop_duplicates()
 
-    print(df_programas.head())
+    # Eliminar "nombre" de df (solo queda en df_programas)
+    df = df.drop(columns=["nombre"], errors="ignore")
 
-    # Eliminar la columna nombre del df.
-    df = df.drop('nombre', axis=1)
-    print(df.head())
-
+    # Llamar al CRUD final
     resultados = insertar_datos_en_bd(db, df_programas, df)
     return resultados

@@ -69,7 +69,7 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
 
     # 2. Insertar/actualizar grupos (se asume existencia de tabla `grupo` con columnas usadas por el router)
     insert_grupo_sql = text("""
-        INSERT INTO grupo (
+        INSERT INTO grupos (
             cod_ficha, cod_centro, cod_programa, la_version, estado_grupo,
             nombre_nivel, jornada, fecha_inicio, fecha_fin, etapa,
             modalidad, responsable, nombre_empresa, nombre_municipio,

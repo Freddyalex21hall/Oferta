@@ -74,31 +74,6 @@ CREATE TABLE estado_de_normas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-Table grupos{
-	ficha integer PRIMARY KEY integer unique
-	cod_programa mediumint
-	cod_centro smallint
-	modalidad varchar
-	jornada varchar
-	etapa_ficha varchar
-	estado_curso varchar
-	fecha_inicio date
-	fecha_fin date
-	cod_municipio char
-	nombre_responsable varchar
-	cupo_asignado smallint
-	num_aprendices_fem smallint
-	num_aprendices_mas smallint
-	num_aprendices_nobin smallint
-	num_aprendices_matriculados smallint
-	num_aprendices_activos smallint
-	id_historico integer
-	tipo_doc_empresa char
-	num_doc_empresa varchar
-	nombre_empresa varchar
-	nombre_estrategia varchar
-}
-
 INSERT INTO rol (nombre_rol) VALUES 
 ('Administrador'),
 ('Editor'),

@@ -8,7 +8,7 @@ from app.crud.estado_normas import (
 )
 from core.database import get_db
 
-router = APIRouter(prefix="/estado_normas", tags=["Estado Normas"])
+router = APIRouter(prefix="/estado_normas", tags=["Estado de Normas"])
 
 @router.post("/crear", status_code=status.HTTP_201_CREATED)
 def crear(norma: CrearEstadoNorma, db: Session = Depends(get_db)):
