@@ -8,25 +8,41 @@ CREATE TABLE rol(
     nombre_rol VARCHAR(20)
 );
 
-CREATE TABLE catalogo_programas(
-    id_programa  INT NOT NULL AUTO_INCREMENT,
-    cod_programa  MEDIUMINT,
-    ver_sion  VARCHAR(255),
-    nombre  VARCHAR(255),
-    tipo_formacion  VARCHAR(70),
-    nivel_formacion  VARCHAR(70),
-    duracion_maxima  VARCHAR(50),
-    fecha_registro  DATE,
-    linea_tecnologica  VARCHAR(100),
-    red_tecnologica  VARCHAR(255),
-    modalidad  VARCHAR(100),
-    ocupacion  VARCHAR(100),
-    duracion_lectiva  DATE,
-    descripcion  VARCHAR(255),
-    resolucion  VARCHAR(100),
-    fecha_resolucion  DATE,
-    tipo_permiso  CHAR(50),
-    PRIMARY KEY (id_programa)
+-- Hacer carga backend 
+-- Programas que pueden ofertarse se carga del CATALOGO DE PROGRAMAS
+CREATE TABLE programas_formacion (
+    `cod_programa` VARCHAR(16) PRIMARY KEY,        -- PRF_CODIGO
+    `cod_version` VARCHAR(20),                    -- cod_VERSION
+    `PRF_version` TINYINT UNSIGNED,                    -- PRF_VERSION
+    `tipo_formacion` VARCHAR(30),                    -- TIPO DE FORMACION
+    `nombre_programa` VARCHAR(255) NOT NULL,          -- PRF_DENOMINACION
+    `nivel_formacion` VARCHAR(30),                    -- NIVEL DE FORMACION
+    `duracion_maxima` SMALLINT UNSIGNED,                       -- PRF_DURACION_MAXIMA
+    `dur_etapa_lectiva` SMALLINT UNSIGNED,                       -- PRF_DUR_ETAPA_LECTIVA
+    `dur_etapa_productiva` SMALLINT UNSIGNED,                       -- PRF_DUR_ETAPA_PROD
+    `fecha_registro` DATE,                           -- PRF_FCH_REGISTRO
+    `fecha_activo` DATE,                           -- Fecha Activo (En Ejecución)
+    `edad_min_requerida` CHAR(2),                       -- PRF_EDAD_MIN_REQUERIDA
+    `grado_min_requerido` VARCHAR(50),                    -- PRF_GRADO_MIN_REQUERIDO
+    `descripcion_req` TEXT,                           -- PRF_DESCRIPCION_REQUISITO
+    `resolucion` VARCHAR(250),                    -- PRF_RESOLUCION
+    `fecha_resolucion` DATE,                           -- PRF_FECHA_RESOLUCION
+    `apoyo_fic` VARCHAR(2),                     -- PRF_APOYO_FIC
+    `creditos` TINYINT UNSIGNED,                            -- PRF_CREDITOS
+    `alamedida` VARCHAR(2),                     -- PRF_ALAMEDIDA
+    `linea_tecnologica` VARCHAR(50),                   -- Linea Tecnológica
+    `red_tecnologica`  VARCHAR(80),                   -- Red Tecnológica
+    `red_conocimiento` VARCHAR(80),                   -- Red de Conocimiento
+    `modalidad` VARCHAR(30),                    -- Modalidad
+    `apuestas_prioritarias` VARCHAR(80),                  -- Apuestas Prioritarias
+    `fic` VARCHAR(2),                     -- FIC (NO/SI)
+    `tipo_permiso` VARCHAR(30),                    -- TIPO PERMISO
+    `multiple_inscripcion` VARCHAR(2),                     -- Multiple Inscripcion
+    `indice` VARCHAR(20),                    -- Indice
+    `ocupacion` VARCHAR(60),                   -- Ocupación
+    `estado` BOOLEAN,
+    `url_pdf` VARCHAR(250),
+    INDEX idx_nivel_modalidad (`nivel_formacion`, `modalidad`)
 );
  
 

@@ -2,150 +2,100 @@ from fastapi import APIRouter, UploadFile, File, Depends
 import pandas as pd
 from sqlalchemy.orm import Session
 from io import BytesIO
-from app.crud.cargar_archivos import insertar_datos_en_bd, insertar_dim_tiempo
+from app.crud.cargar_archivos import insertar_datos_en_bd, insertar_municipios, insertar_catalogo_programas
 from core.database import get_db
 
 router = APIRouter()
 
-@router.post("/upload-excel-pe04/")
+@router.post("/upload-excel-catalogo-programas/")
 async def upload_excel(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
     contents = await file.read()
-    df = pd.read_excel(
-    BytesIO(contents),
-    engine="openpyxl",
-    usecols=[
-        "PRF_CODIGO",
-        "PRF_VERSION",
-        "COD_VER",
-        "TIPO DE FORMACION",
-        "PRF_DENOMINACION",
-        "NIVEL DE FORMACION",
-        "PRF_DURACION_MAXIMA",
-        "PRF_DUR_ETAPA_LECTIVA",
-        "PRF_DUR_ETAPA_PROD",
-        "PRF_FCH_REGISTRO",
-        "Fecha Activo (En Ejecución)",
-        "PRF_EDAD_MIN_REQUERIDA",
-        "PRF_GRADO_MIN_REQUERIDO",
-        "PRF_DESCRIPCION_REQUISITO",
-        "PRF_RESOLUCION",
-        "PRF_FECHA_RESOLUCION",
-        "PRF_APOYO_FIC",
-        "PRF_CREDITOS",
-        "PRF_ALAMEDIDA",
-        "Linea Tecnológica ",
-        "Red Tecnológica",
-        "Red de Conocimiento",
-        "Modalidad",
-        "APUESTAS PRIORITARIAS",
-        "FIC",
-        "TIPO PERMISO",
-        "Multiple Inscripcion",
-        "Indice",
-        "Ocupación"
-    ],
-    dtype=str
-)
-
+    usecols = [
+        "PRF_CODIGO", "PRF_VERSION", "COD_VER", "TIPO_FORMACION", "PRF_DENOMINACION", 
+        "NIVEL_FORMACION", "PRF_DURACION_MAXIMA", "PRF_DUR_ETAPA_LECTIVA", "PRF_DUR_ETAPA_PROD",
+        "PRF_FCH_REGISTRO", "FECHA_ACTIVO", "PRF_EDAD_MIN_REQUERIDA", "PRF_GRADO_MIN_REQUERIDO", 
+        "PRF_DESCRIPCION_REQUISITO", "PRF_RESOLUCION", "PRF_FECHA_RESOLUCION", "PRF_APOYO_FIC",
+        "PRF_CREDITOS", "PRF_ALAMEDIDA", "LINEA_TECNOLOGICA", "RED_TECNOLOGICA", "RED_CONOCIMIENTO",
+        "MODALIDAD", "APUESTAS_PRIORITARIAS", "FIC", "TIPO_PERMISO", "MULTIPLE_INSCRIPCION", "INDICE", "OCUPACION"
+    ]
+    df = pd.read_excel(BytesIO(contents), engine="openpyxl", usecols=usecols, dtype=str)
 
     df = df.rename(columns={
-    "PRF_CODIGO": "cod_programa",
-    "PRF_VERSION": "version",
-    "COD_VER": "codigo_version",
-    "TIPO DE FORMACION": "tipo_formacion",
-    "PRF_DENOMINACION": "nombre_programa",
-    "NIVEL DE FORMACION": "nivel",
-    "PRF_DURACION_MAXIMA": "duracion_max",
-    "PRF_DUR_ETAPA_LECTIVA": "duracion_lectiva",
-    "PRF_DUR_ETAPA_PROD": "duracion_productiva",
-    "PRF_FCH_REGISTRO": "fecha_registro",
-    "Fecha Activo (En Ejecución)": "fecha_activo",
-    "PRF_EDAD_MIN_REQUERIDA": "edad_minima",
-    "PRF_GRADO_MIN_REQUERIDO": "grado_minimo",
-    "PRF_DESCRIPCION_REQUISITO": "requisitos",
-    "PRF_RESOLUCION": "resolucion",
-    "PRF_FECHA_RESOLUCION": "fecha_resolucion",
-    "PRF_APOYO_FIC": "apoyo_fic",
-    "PRF_CREDITOS": "creditos",
-    "PRF_ALAMEDIDA": "a_la_medida",
-    "Linea Tecnológica ": "linea_tecnologica",
-    "Red Tecnológica": "red_tecnologica",
-    "Red de Conocimiento": "red_conocimiento",
-    "Modalidad": "modalidad",
-    "APUESTAS PRIORITARIAS": "apuestas_prioritarias",
-    "FIC": "fic",
-    "TIPO PERMISO": "tipo_permiso",
-    "Multiple Inscripcion": "multiple_inscripcion",
-    "Indice": "indice",
-    "Ocupación": "ocupacion"
+        "PRF_CODIGO": "cod_programa",
+        "PRF_VERSION": "PRF_version",
+        "COD_VER": "cod_version",
+        "TIPO_FORMACION": "tipo_formacion",
+        "PRF_DENOMINACION": "nombre_programa",
+        "NIVEL_FORMACION": "nivel_formacion",
+        "PRF_DURACION_MAXIMA": "duracion_maxima",
+        "PRF_DUR_ETAPA_LECTIVA": "dur_etapa_lectiva",
+        "PRF_DUR_ETAPA_PROD": "dur_etapa_productiva",
+        "PRF_FCH_REGISTRO": "fecha_registro",
+        "FECHA_ACTIVO": "fecha_activo",
+        "PRF_EDAD_MIN_REQUERIDA": "edad_min_requerida",
+        "PRF_GRADO_MIN_REQUERIDO": "grado_min_requerido",
+        "PRF_DESCRIPCION_REQUISITO": "descripcion_req",
+        "PRF_RESOLUCION": "resolucion",
+        "PRF_FECHA_RESOLUCION": "fecha_resolucion",
+        "PRF_APOYO_FIC": "apoyo_fic",
+        "PRF_CREDITOS": "creditos",
+        "PRF_ALAMEDIDA": "alamedida",
+        "LINEA_TECNOLOGICA": "linea_tecnologica",
+        "RED_TECNOLOGICA": "red_tecnologica",
+        "RED_CONOCIMIENTO": "red_conocimiento",
+        "MODALIDAD": "modalidad",
+        "APUESTAS_PRIORITARIAS": "apuestas_prioritarias",
+        "FIC": "fic",
+        "TIPO_PERMISO": "tipo_permiso",
+        "MULTIPLE_INSCRIPCION": "multiple_inscripcion",
+        "INDICE": "indice",
+        "OCUPACION": "ocupacion"
     })
 
-
-    required_fields = [
-        "cod_programa",
-        "version",
-        "nombre_programa",
-        "nivel",
-        "tipo_formacion",
-        "duracion_max",
-        "duracion_lectiva",
-        "duracion_productiva",
-        "fecha_registro",
-        "resolucion",
-        "fecha_resolucion",
-        "linea_tecnologica",
-        "red_tecnologica",
-        "red_conocimiento",
-        "modalidad"
-    ]
+    # Campos obligatorios para insertar
+    required_fields = ["cod_programa", "nombre_programa", "tipo_formacion", "nivel_formacion", "duracion_maxima", "fecha_registro"]
     df = df.dropna(subset=required_fields)
 
-    for col in ["cod_programa", "version", "nombre_programa", "nivel", "tipo_formacion", "duracion_max", "duracion_lectiva", "duracion_productiva", "fecha_registro", "resolucion", "fecha_resolucion", "linea_tecnologica", "red_tecnologica", "red_conocimiento", "modalidad"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+    # Conversión de tipos numéricos
+    for col in ["PRF_version", "duracion_maxima", "dur_etapa_lectiva", "dur_etapa_productiva", "creditos"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
 
-    df["fecha_registro"] = pd.to_datetime(df["fecha_registro"], errors="coerce").dt.date
-    df["fecha_resolucion"] = pd.to_datetime(df["fecha_resolucion"], errors="coerce").dt.date
+    # Convertir fechas a tipo date
+    for col in ["fecha_registro", "fecha_activo", "fecha_resolucion"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
 
-    # --- CORRECCIÓN: limpiar NaN de los DF antes de insertarlos ---
-    df_programas = df[["cod_programa", "version", "nombre_programa", "nivel", "tipo_formacion", "duracion_max", "duracion_lectiva", "duracion_productiva", "fecha_registro", "resolucion", "fecha_resolucion", "linea_tecnologica", "red_tecnologica", "red_conocimiento", "modalidad"]].drop_duplicates().fillna("")
-    df_programas["tiempo_duracion"] = df_programas["duracion_max"] - df_programas["duracion_lectiva"] - df_programas["duracion_productiva"]
-    df_programas["tiempo_duracion"] = df_programas["tiempo_duracion"].astype(int)
-    df_programas["apoyo_fic"] = df_programas["apoyo_fic"].astype(int)
-    df_programas["estado"] = 1
-    df_programas["url_pdf"] = ""
+    # Elimina '' y NaN/NaT, solo permite objetos date o None en columnas de fecha
+    for col in ["fecha_registro", "fecha_activo", "fecha_resolucion"]:
+        if col in df.columns:
+            df[col] = df[col].apply(lambda x: x if pd.notnull(x) and x != '' else None)
 
-    resultados = insertar_datos_en_bd(db, df_programas)
-    return resultados
+    # Derivar el campo estado
+    df['estado'] = df['fecha_activo'].notnull()
 
-@router.post("/upload-excel-dim-tiempo/")
-async def upload_excel(
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db)
-):
-    contents = await file.read()
-    df = pd.read_excel(
-        BytesIO(contents),
-        engine="openpyxl",
-        usecols=[
-            "fecha", "anio", "mes", "nombre_mes", "dia"
-        ],
-        dtype=str
-    )
+    # Campos a insertar
+    final_fields = [
+        "cod_programa", "PRF_version", "cod_version", "tipo_formacion", "nombre_programa",
+        "nivel_formacion", "duracion_maxima", "dur_etapa_lectiva", "dur_etapa_productiva",
+        "fecha_registro", "fecha_activo", "edad_min_requerida", "grado_min_requerido", "descripcion_req",
+        "resolucion", "fecha_resolucion", "apoyo_fic", "creditos", "alamedida", "linea_tecnologica",
+        "red_tecnologica", "red_conocimiento", "modalidad", "apuestas_prioritarias", "fic", "tipo_permiso",
+        "multiple_inscripcion", "indice", "ocupacion", "estado"
+    ]
+    if "url_pdf" not in df.columns:
+        df["url_pdf"] = ""
+    final_fields.append("url_pdf")
 
-    df = df.rename(columns={
-        "fecha": "fecha",
-        "anio": "anio",
-        "mes": "mes",
-        "nombre_mes": "nombre_mes",
-        "dia": "dia",
-    })
-    
-    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce").dt.date
+    df_programas = df[final_fields].drop_duplicates()
 
-    dim_tiempo = df[["fecha", "anio", "mes", "nombre_mes", "dia"]].drop_duplicates().fillna("")
-    
-    resultados = insertar_dim_tiempo(db, dim_tiempo)
+    # Para los campos STRING (excepto fechas), puedes usar .fillna("") (opcional)
+    for col in df_programas.columns:
+        if col not in ["fecha_registro", "fecha_activo", "fecha_resolucion"]:
+            df_programas[col] = df_programas[col].fillna("")
+
+    resultados = insertar_catalogo_programas(db, df_programas)
     return resultados
