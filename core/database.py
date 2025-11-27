@@ -1,6 +1,10 @@
 from typing import Generator
 import logging
 
+# Importar PyMySQL explícitamente para asegurar que SQLAlchemy lo use
+import pymysql
+pymysql.install_as_MySQLdb()
+
 from sqlalchemy import create_engine, text, MetaData
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError, OperationalError, DisconnectionError
