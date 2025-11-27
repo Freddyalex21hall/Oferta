@@ -1,7 +1,7 @@
 DROP DATABASE IF EXISTS railway;
-CREATE DATABASE oferta_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE railway CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE oferta_db;
+USE railway;
 
 CREATE TABLE rol(
     id_rol SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -81,7 +81,7 @@ CREATE TABLE programas_formacion (
 
 CREATE TABLE IF NOT EXISTS `grupos` (
 	`ficha` INTEGER UNSIGNED NOT NULL UNIQUE,
-	`cod_programa` MEDIUMINT UNSIGNED,
+	`cod_programa` VARCHAR(16),
 	`cod_centro` SMALLINT UNSIGNED,
 	`modalidad` VARCHAR(80),
 	`jornada` VARCHAR(80),
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS `historico`(
 );
 CREATE TABLE estado_de_normas (
 	id_estado_norma MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-	cod_programa MEDIUMINT UNSIGNED NOT NULL,
+	cod_programa VARCHAR(16) NOT NULL,
 	cod_version VARCHAR(50) NOT NULL,
 	fecha_elaboracion DATE NOT NULL,
 	anio SMALLINT NOT NULL,
@@ -157,7 +157,7 @@ CREATE TABLE estado_de_normas (
 );
 
 CREATE TABLE IF NOT EXISTS `registro_calificado` (
-	`cod_programa` MEDIUMINT UNSIGNED NOT NULL,
+	`cod_programa` VARCHAR(16) NOT NULL,
 	`tipo_tramite` VARCHAR(50),
 	`fecha_radicado` DATE,
 	`numero_resolucion` MEDIUMINT,
