@@ -158,5 +158,7 @@ async def upload_excel_registro_calificado(
     # -----------------------------------------------------
     # 6️⃣ GUARDAR EN BD
     # -----------------------------------------------------
-    resultados = insertar_registro_calificado_en_bd(db, df)
+    # Permitir importar registros aunque `programas_formacion` esté vacío.
+    # Esto deshabilita temporalmente las comprobaciones de FK en la conexión.
+    resultados = insertar_registro_calificado_en_bd(db, df, allow_missing_programs=True)
     return resultados
