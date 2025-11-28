@@ -40,8 +40,14 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame):
 
     for idx, row in df_registros.iterrows():
         try:
+            # Mantener cod_programa como texto (VARCHAR en la BD)
+            cod_prog_raw = row.get("cod_programa")
+            cod_programa = None
+            if pd.notna(cod_prog_raw):
+                cod_programa = str(cod_prog_raw).strip()
+
             params = {
-                "cod_programa": int(row["cod_programa"]) if pd.notna(row.get("cod_programa")) else None,
+                "cod_programa": cod_programa,
                 "tipo_tramite": str(row.get("tipo_tramite")) if pd.notna(row.get("tipo_tramite")) else None,
                 "fecha_radicado": row.get("fecha_radicado") if pd.notna(row.get("fecha_radicado")) else None,
                 "numero_resolucion": int(row["numero_resolucion"]) if "numero_resolucion" in row and pd.notna(row.get("numero_resolucion")) else None,
@@ -55,6 +61,19 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame):
 
             if not params["cod_programa"]:
                 errores.append(f"Fila {idx}: cod_programa inválido o ausente")
+                continue
+
+            # Verificar existencia en programas_formacion para cumplir la FK
+            try:
+                exists_q = text("SELECT 1 FROM programas_formacion WHERE cod_programa = :cod LIMIT 1")
+                exists = db.execute(exists_q, {"cod": params["cod_programa"]}).first()
+            except Exception:
+                exists = None
+
+            if not exists:
+                errores.append(
+                    f"Fila {idx}: cod_programa '{params['cod_programa']}' no existe en 'programas_formacion' -> omitiendo para evitar violar FK"
+                )
                 continue
 
             result = db.execute(insert_sql, params)
