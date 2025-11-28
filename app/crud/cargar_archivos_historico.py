@@ -34,7 +34,6 @@ def insertar_historico_completo_en_bd(db: Session, df_completo):
     try:
         # Obtener todas las fichas del DataFrame
         fichas = df_completo["ficha"].unique().tolist()
-        
         # Verificar qué fichas ya existen en grupos
         query_grupos_existentes = text("""
             SELECT ficha 
@@ -53,21 +52,17 @@ def insertar_historico_completo_en_bd(db: Session, df_completo):
         
         # 1. Procesar registros SIN grupo: crear grupos primero
         if len(df_sin_grupo) > 0:
-            # Crear programas, centros, municipios y estrategias si no existen
             programas_creados, centros_creados, municipios_creados, estrategias_creadas, errores_aux = \
                 crear_dependencias_grupos(db, df_sin_grupo)
             errores.extend(errores_aux)
             
-            # Crear grupos
             grupos_creados, errores_aux = crear_grupos_desde_df(db, df_sin_grupo)
             errores.extend(errores_aux)
         
         # 2. Procesar histórico para TODOS los registros (con y sin grupo)
-        # Ahora todas las fichas deberían existir en grupos
         registros_historico_insertados, registros_historico_actualizados, errores_aux = \
             insertar_actualizar_historico(db, df_completo)
         errores.extend(errores_aux)
-        
         # Commit de la transacción
         db.commit()
         
@@ -109,7 +104,6 @@ def crear_dependencias_grupos(db: Session, df):
     
     # 1. Crear programas de formación
     if "cod_programa" in df.columns and "nombre_programa" in df.columns:
-        # Seleccionar solo las columnas que existen
         cols_programa = ["cod_programa"]
         if "version" in df.columns:
             cols_programa.append("version")
@@ -151,7 +145,6 @@ def crear_dependencias_grupos(db: Session, df):
     
     # 2. Crear centros de formación
     if "cod_centro" in df.columns and "nombre_centro" in df.columns:
-        # Seleccionar solo las columnas que existen
         cols_centro = ["cod_centro", "nombre_centro"]
         if "cod_regional" in df.columns:
             cols_centro.append("cod_regional")
@@ -365,7 +358,6 @@ def insertar_actualizar_historico(db: Session, df):
     
     for idx, row in df.iterrows():
         try:
-            # Verificar que id_grupo existe
             if "id_grupo" not in row or pd.isna(row["id_grupo"]):
                 errores.append(f"Error: id_grupo requerido en índice {idx}")
                 continue
@@ -418,7 +410,6 @@ def insertar_historico_en_bd(db: Session, df_historico):
     errores = []
 
     try:
-        # Insertar/actualizar histórico
         insert_historico_sql = text("""
             INSERT INTO historico (
                 id_grupo,
@@ -472,11 +463,9 @@ def insertar_historico_en_bd(db: Session, df_historico):
 
         for idx, row in df_historico.iterrows():
             try:
-                # Convertir a dict y manejar valores None/NaN
                 params = row.to_dict()
                 params = {k: (None if pd.isna(v) else v) for k, v in params.items()}
                 
-                # Validar que id_grupo exista (campo requerido)
                 if not params.get('id_grupo'):
                     msg = f"Error: id_grupo requerido en índice {idx}"
                     errores.append(msg)
@@ -494,7 +483,6 @@ def insertar_historico_en_bd(db: Session, df_historico):
                 msg = f"Error al insertar histórico (índice {idx}, id_grupo: {row.get('id_grupo', 'N/A')}): {str(e)}"
                 errores.append(msg)
                 logger.error(msg)
-
         # Commit de la transacción
         db.commit()
         
