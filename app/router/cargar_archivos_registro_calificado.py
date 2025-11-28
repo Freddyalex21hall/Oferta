@@ -19,27 +19,18 @@ async def upload_excel_registro_calificado(
 ):
     contents = await file.read()
 
-    # Intentar leer con diferentes skiprows
-    df = None
-    for skiprows in [0, 1, 2, 3, 4, 5]:
-        try:
-            df_test = pd.read_excel(BytesIO(contents), engine="openpyxl", skiprows=skiprows, nrows=0)
-            if len(df_test.columns) > 0:
-                df = pd.read_excel(BytesIO(contents), engine="openpyxl", skiprows=skiprows, dtype=str)
-                break
-        except Exception:
-            continue
-
-    if df is None:
-        try:
-            df = pd.read_excel(BytesIO(contents), engine="openpyxl", dtype=str)
-        except Exception as e:
-            return {"exitoso": False, "mensaje": f"No se pudo leer el archivo Excel: {str(e)}"}
+    # -----------------------------------------------------
+    # 0️⃣ LEER EL EXCEL — SIN SKIPROWS (ESTO ERA EL ERROR)
+    # -----------------------------------------------------
+    try:
+        df = pd.read_excel(BytesIO(contents), engine="openpyxl", dtype=str)
+    except Exception as e:
+        return {"exitoso": False, "mensaje": f"No se pudo leer el archivo Excel: {str(e)}"}
 
     if df is None or df.empty:
         return {"exitoso": False, "mensaje": "Archivo vacío o sin datos"}
 
-    # Normalizar nombres de columnas
+    # Limpiar encabezados
     df.columns = df.columns.astype(str).str.strip()
 
     # -----------------------------------------------------
@@ -51,13 +42,14 @@ async def upload_excel_registro_calificado(
         s = unicodedata.normalize("NFD", s)
         s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
         s = s.lower()
+        s = s.replace("\xa0", " ")  # espacios raros
         s = re.sub(r"[_\.\-]+", " ", s)
         s = re.sub(r"[^a-z0-9\s]", "", s)
         s = re.sub(r"\s+", " ", s).strip()
         return s
 
     # -----------------------------------------------------
-    # 2️⃣ NUEVO MAPEO — LIMPIO, SIMPLE y EFECTIVO
+    # 2️⃣ MAPEO FLEXIBLE
     # -----------------------------------------------------
     mapeo_flexible = {
         # cod_programa
@@ -103,12 +95,15 @@ async def upload_excel_registro_calificado(
         "estado": "estado_catalogo",
     }
 
-    # Normalizar columnas existentes
+    # Normalizar columnas del archivo
     columnas_norm = {normalize_colname(c): c for c in df.columns}
 
     columnas_renombrar = {}
     usados = set()
 
+    # -----------------------------------------------------
+    # 3️⃣ MAPEO AUTOMÁTICO
+    # -----------------------------------------------------
     for alias, target in mapeo_flexible.items():
         norm_alias = normalize_colname(alias)
 
@@ -118,7 +113,7 @@ async def upload_excel_registro_calificado(
             usados.add(target)
             continue
 
-        # coincidencia parcial flexible
+        # coincidencia parcial
         for norm_col, original in columnas_norm.items():
             if norm_alias in norm_col or norm_col in norm_alias:
                 if target not in usados:
@@ -129,7 +124,7 @@ async def upload_excel_registro_calificado(
     df = df.rename(columns=columnas_renombrar)
 
     # -----------------------------------------------------
-    # 3️⃣ DETECCIÓN FINAL DE cod_programa (mejorada)
+    # 4️⃣ DETECCIÓN FINAL DE cod_programa (a prueba de balas)
     # -----------------------------------------------------
     if "cod_programa" not in df.columns:
         for col in df.columns:
@@ -146,21 +141,22 @@ async def upload_excel_registro_calificado(
         }
 
     # -----------------------------------------------------
-    # 4️⃣ LIMPIEZA DE DATOS
+    # 5️⃣ LIMPIEZA DE DATOS
     # -----------------------------------------------------
     df = df.dropna(subset=["cod_programa"])
-
     df["cod_programa"] = df["cod_programa"].astype(str).str.strip()
 
+    # numeros
     if "numero_resolucion" in df.columns:
         df["numero_resolucion"] = pd.to_numeric(df["numero_resolucion"], errors="coerce").astype("Int64")
 
+    # fechas
     for date_col in ["fecha_radicado", "fecha_resolucion", "fecha_vencimiento"]:
         if date_col in df.columns:
             df[date_col] = pd.to_datetime(df[date_col], errors="coerce").dt.date
 
     # -----------------------------------------------------
-    # 5️⃣ GUARDAR EN LA BD
+    # 6️⃣ GUARDAR EN BD
     # -----------------------------------------------------
     resultados = insertar_registro_calificado_en_bd(db, df)
     return resultados
