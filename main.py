@@ -1,14 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.router import usuarios, auth, programas, programas_formacion, historico, cargar_archivos_historico, estado_normas, catalogo, cargar_archivos_registro_calificado, registro_calificado, cargar_archivos, reporte_final
+from app.router import usuarios, auth, reporte_final, programas_formacion, programas, historico, cargar_archivos_historico, estado_normas, catalogo, cargar_archivos_registro_calificado, registro_calificado, cargar_archivos
+
 
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 # Incluir en el objeto app los routers
-app.include_router(usuarios.router, prefix="/usuario", tags=["servicios usuarios"])
-app.include_router(auth.router, prefix="/access", tags=["servicios de autenticación"])
 app.include_router(cargar_archivos_historico.router, prefix="/cargar", tags=["Cargar archivos histórico"])
 app.include_router(historico.router, prefix="/historico", tags=["servicios histórico"])
 app.include_router(programas.router)
@@ -20,7 +19,10 @@ app.include_router(cargar_archivos.router,prefix="/cargar_archivos",tags=["Carga
 app.include_router(programas_formacion.router, prefix="/programas_formacion",tags=["Programas Formación"])
 app.include_router(cargar_archivos_registro_calificado.router, prefix="/Registro-Calificado", tags=["Registro Calificado"])
 app.include_router(registro_calificado.router, prefix="/registro_calificado", tags=["Registro Calificado"])
-app.include_router(cargar_archivos.router,prefix="/cargar-archivos",tags=["cargar archivos"]  )
+app.include_router(reporte_final.router, prefix="/reportes", tags=["Reporte Final"])
+app.include_router(usuarios.router, prefix="/usuario", tags=["servicios usuarios"])
+app.include_router(auth.router, prefix="/access", tags=["servicios de autenticación"])
+app.include_router(programas.router)
 # Configuración de CORS para permitir todas las solicitudes desde cualquier origen
 app.add_middleware(
     CORSMiddleware,

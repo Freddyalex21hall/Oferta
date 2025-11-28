@@ -29,9 +29,9 @@ class EditarPrograma(BaseModel):
     programa_especial: Optional[int] = None
 
 class RetornoPrograma(BaseModel):
-    cod_programa: int
+    cod_programa: str
     version: Optional[str]
-    nombre: str
+    nombre: Optional[str]
     nivel: Optional[str]
     meses_duracion: Optional[int]
     duracion_programa: Optional[int]
