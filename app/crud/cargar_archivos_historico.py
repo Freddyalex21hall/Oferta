@@ -117,12 +117,12 @@ def crear_dependencias_grupos(db: Session, df):
         
         insert_programa_sql = text("""
             INSERT INTO programas_formacion (
-                cod_programa, version, nombre, nivel, tiempo_duracion, estado, url_pdf
+                cod_programa, cod_version, nombre, nivel, tiempo_duracion, estado, url_pdf
             ) VALUES (
-                :cod_programa, :version, :nombre, :nivel, 0, 1, ''
+                :cod_programa, :cod_version, :nombre, :nivel, 0, 1, ''
             )
             ON DUPLICATE KEY UPDATE
-                version = COALESCE(VALUES(version), version),
+                cod_version = COALESCE(VALUES(cod_version), cod_version),
                 nombre = COALESCE(VALUES(nombre), nombre),
                 nivel = COALESCE(VALUES(nivel), nivel)
         """)
@@ -131,7 +131,7 @@ def crear_dependencias_grupos(db: Session, df):
             try:
                 params = {
                     "cod_programa": int(row["cod_programa"]) if pd.notna(row["cod_programa"]) else None,
-                    "version": str(row["version"]) if "version" in row and pd.notna(row.get("version")) else None,
+                    "cod_version": str(row["version"]) if "version" in row and pd.notna(row.get("version")) else None,
                     "nombre": str(row["nombre_programa"]) if "nombre_programa" in row and pd.notna(row["nombre_programa"]) else None,
                     "nivel": str(row["nivel"]) if "nivel" in row and pd.notna(row.get("nivel")) else None
                 }
