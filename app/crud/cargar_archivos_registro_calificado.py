@@ -7,7 +7,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame):
+def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame, allow_missing_programs: bool = False):
     """
     Inserta o actualiza registros en la tabla `registro_calificado`.
     Se usa `cod_programa` como clave primaria para INSERT ... ON DUPLICATE KEY UPDATE.
@@ -38,6 +38,11 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame):
             estado_catalogo = VALUES(estado_catalogo)
     """)
 
+    # Nota: la lógica anterior podía deshabilitar comprobaciones de FK.
+    # Hoy preferimos no deshabilitar nunca las comprobaciones de la base de datos
+    # para mantener la integridad referencial. El parámetro `allow_missing_programs`
+    # se mantiene por compatibilidad pero no activa ninguna modificación del servidor.
+
     for idx, row in df_registros.iterrows():
         try:
             # Mantener cod_programa como texto (VARCHAR en la BD)
@@ -63,18 +68,19 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame):
                 errores.append(f"Fila {idx}: cod_programa inválido o ausente")
                 continue
 
-            # Verificar existencia en programas_formacion para cumplir la FK
-            try:
-                exists_q = text("SELECT 1 FROM programas_formacion WHERE cod_programa = :cod LIMIT 1")
-                exists = db.execute(exists_q, {"cod": params["cod_programa"]}).first()
-            except Exception:
-                exists = None
+            # Si no permitimos programas faltantes, verificar existencia en programas_formacion
+            if not allow_missing_programs:
+                try:
+                    exists_q = text("SELECT 1 FROM programas_formacion WHERE cod_programa = :cod LIMIT 1")
+                    exists = db.execute(exists_q, {"cod": params["cod_programa"]}).first()
+                except Exception:
+                    exists = None
 
-            if not exists:
-                errores.append(
-                    f"Fila {idx}: cod_programa '{params['cod_programa']}' no existe en 'programas_formacion' -> omitiendo para evitar violar FK"
-                )
-                continue
+                if not exists:
+                    errores.append(
+                        f"Fila {idx}: cod_programa '{params['cod_programa']}' no existe en 'programas_formacion' -> omitiendo para evitar violar FK"
+                    )
+                    continue
 
             result = db.execute(insert_sql, params)
             if result.rowcount == 1:
@@ -86,6 +92,8 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame):
             msg = f"Error al insertar/actualizar registro calificado (índice {idx}, cod_programa: {row.get('cod_programa', 'N/A')}): {str(e)}"
             errores.append(msg)
             logger.error(msg)
+
+    # No reactivamos ni modificamos FOREIGN_KEY_CHECKS aquí (no se deshabilitó).
 
     # Commit once after loop
     try:
