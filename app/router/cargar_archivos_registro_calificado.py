@@ -45,6 +45,19 @@ async def upload_excel_registro_calificado(
 
     # Normalizar nombres de columnas (remover acentos/puntuación y normalizar espacios)
     df.columns = df.columns.astype(str).str.strip()
+    
+    # Renombre directo para casos exactos como "COD DEL PROGRAMA"
+    renombres_directos = {
+        "COD DEL PROGRAMA": "cod_programa",
+        "Código del programa": "cod_programa",
+        "Código programa": "cod_programa",
+        "COD PROGRAMA": "cod_programa",
+    }
+
+    for original, target in renombres_directos.items():
+        if original in df.columns:
+            df = df.rename(columns={original: target})
+
 
     def normalize_colname(s: str) -> str:
         if s is None:
