@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.router import usuarios, auth, programas_formacion, programas, historico, cargar_archivos_historico, estado_normas, catalogo, cargar_archivos_registro_calificado, registro_calificado, cargar_archivos
+from app.router import usuarios, auth, reporte_final, programas_formacion, programas, historico, cargar_archivos_historico, estado_normas, catalogo, cargar_archivos_registro_calificado, registro_calificado, cargar_archivos
 
 
 app = FastAPI()
@@ -16,6 +16,7 @@ app.include_router(catalogo.router, prefix="/catalogo", tags=["Catalogo"])
 app.include_router(programas_formacion.router, prefix="/programas-formacion",tags=["Programas de Formación"])
 app.include_router(cargar_archivos_registro_calificado.router, prefix="/cargar_registro_calificado", tags=["Cargar Archivos Registro Calificado"])
 app.include_router(registro_calificado.router, prefix="/registro_calificado", tags=["Registro Calificado"])
+app.include_router(reporte_final.router, prefix="/reportes", tags=["Reporte Final"])
 app.include_router(usuarios.router, prefix="/usuario", tags=["servicios usuarios"])
 app.include_router(auth.router, prefix="/access", tags=["servicios de autenticación"])
 app.include_router(programas.router)
