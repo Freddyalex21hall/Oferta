@@ -1,5 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Depends
 import pandas as pd
+import unicodedata
+import re
 from sqlalchemy.orm import Session
 from io import BytesIO
 from app.crud.cargar_archivos_registro_calificado import insertar_registro_calificado_en_bd
@@ -42,61 +44,76 @@ async def upload_excel_registro_calificado(
     if df is None or df.empty:
         return {"exitoso": False, "mensaje": "Archivo vacío o sin datos"}
 
-    # Normalizar nombres de columnas
+    # Normalizar nombres de columnas (remover acentos/puntuación y normalizar espacios)
     df.columns = df.columns.astype(str).str.strip()
 
-    # Mapeo flexible similar a cargar_archivos_historico
+    def normalize_colname(s: str) -> str:
+        if s is None:
+            return ""
+        s = str(s)
+        # NFD + remove diacritics
+        s = unicodedata.normalize('NFD', s)
+        s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
+        # lower, remove punctuation, replace underscores/dots with space
+        s = s.lower()
+        s = re.sub(r"[_\.\-]+", " ", s)
+        # remove any non alnum or space
+        s = re.sub(r"[^a-z0-9\s]", "", s)
+        # collapse spaces
+        s = re.sub(r"\s+", " ", s).strip()
+        return s
+
+    # Mapeo flexible con nombres normalizados
     columnas_mapeo = {
-        "CODIGO_PROGRAMA": "cod_programa",
-        "COD_PROGRAMA": "cod_programa",
-        "COD_PROGRAM": "cod_programa",
-        "CODIGO": "cod_programa",
-        "COD DEL PROGRAMA" : "cod_programa",
+        "codigo programa": "cod_programa",
+        "cod programa": "cod_programa",
+        "cod del programa": "cod_programa",
+        "codigo": "cod_programa",
+        "cod": "cod_programa",
 
-        "TIPO_TRAMITE" : "tipo_tramite",
-        "TRAMITE": "tipo_tramite",
-        "TIPO DE TRÁMITE" : "tipo_tramite",
+        "tipo tramite": "tipo_tramite",
+        "tramite": "tipo_tramite",
 
-        "FECHA_RADICADO": "fecha_radicado",
-        "FECHA_RAD": "fecha_radicado",
-        "FECHA RADICADO" : "fecha_radicado",
+        "fecha radicado": "fecha_radicado",
+        "fecha rad": "fecha_radicado",
 
-        "NUMERO_RESOLUCION": "numero_resolucion",
-        "NUM_RESOLUCION": "numero_resolucion",
-        "RESOLUCION": "numero_resolucion",
-        "NUMERO DE RESOLUCION" : "numero_resolucion",
+        "numero resolucion": "numero_resolucion",
+        "num resolucion": "numero_resolucion",
+        "resolucion": "numero_resolucion",
 
-        "FECHA_RESOLUCION": "fecha_resolucion",
-        "FECHA_VENCIMIENTO": "fecha_vencimiento",
-        "Fecha de vencimiento": "fecha_vencimiento",
+        "fecha resolucion": "fecha_resolucion",
+        "fecha vencimiento": "fecha_vencimiento",
 
-        "VIGENCIA": "vigencia",
-        "VIGENCIA RC" : "vigencia",
-        "MODALIDAD": "modalidad",
-        "CLASIFICACION": "clasificacion",
-        "ESTADO_CATALOGO": "estado_catalogo",
-        "ESTADO": "estado_catalogo",
+        "vigencia": "vigencia",
+        "modalidad": "modalidad",
+        "clasificacion": "clasificacion",
+        "estado catalogo": "estado_catalogo",
+        "estado": "estado_catalogo",
     }
 
-    columnas_disponibles_upper = {col.upper().strip(): col for col in df.columns}
+    # mapa normalizado de columnas disponibles -> original
+    columnas_disponibles_norm = {normalize_colname(col): col for col in df.columns}
     columnas_renombrar = {}
     columnas_usadas = set()
 
-    for col_excel, col_bd in columnas_mapeo.items():
-        key = col_excel.upper().strip()
+    for alias, target in columnas_mapeo.items():
+        norm_alias = normalize_colname(alias)
         found = None
-        if key in columnas_disponibles_upper:
-            found = columnas_disponibles_upper[key]
+        # exact match
+        if norm_alias in columnas_disponibles_norm:
+            found = columnas_disponibles_norm[norm_alias]
         else:
-            for col_up, col_orig in columnas_disponibles_upper.items():
-                if key in col_up or col_up in key:
-                    if col_bd not in columnas_usadas:
-                        found = col_orig
+            # partial contains match
+            for norm_col, orig_col in columnas_disponibles_norm.items():
+                if norm_alias in norm_col or norm_col in norm_alias:
+                    if target not in columnas_usadas:
+                        found = orig_col
                         break
-        if found and col_bd not in columnas_usadas:
-            columnas_renombrar[found] = col_bd
-            columnas_usadas.add(col_bd)
-            columnas_disponibles_upper.pop(found.upper().strip(), None)
+        if found and target not in columnas_usadas:
+            columnas_renombrar[found] = target
+            columnas_usadas.add(target)
+            # remove so we don't reuse same original
+            columnas_disponibles_norm.pop(normalize_colname(found), None)
 
     df = df.rename(columns=columnas_renombrar)
 
