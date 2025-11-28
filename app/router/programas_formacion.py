@@ -9,7 +9,7 @@ from app.crud.programas_formacion import (
 )
 from core.database import get_db
 
-router = APIRouter(prefix="/programas_formacion", tags=["Programas Formación"])
+router = APIRouter()
 
 @router.post("/crear", status_code=status.HTTP_201_CREATED)
 def crear(p: CrearPrograma, db: Session = Depends(get_db)):
