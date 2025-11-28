@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.router import usuarios, auth, programas, programas_formacion, historico, cargar_archivos_historico, estado_normas, catalogo, cargar_archivos_registro_calificado, registro_calificado
+from app.router import usuarios, auth, programas, programas_formacion, historico, cargar_archivos_historico, estado_normas, catalogo, cargar_archivos_registro_calificado, registro_calificado, cargar_archivos
 
 app = FastAPI()
 
@@ -12,13 +12,8 @@ app.include_router(auth.router, prefix="/access", tags=["servicios de autenticac
 app.include_router(cargar_archivos_historico.router, prefix="/cargar", tags=["Cargar archivos histórico"])
 app.include_router(historico.router, prefix="/historico", tags=["servicios histórico"])
 app.include_router(programas.router)
-<<<<<<< HEAD
-app.include_router(estado_normas.router, prefix="/estado_normas", tags=["Estado de Normas"])
-app.include_router(programas_formacion.router, prefix="/programas-formacion",tags=["Programas de Formación"])
-=======
 app.include_router(estado_normas.router, prefix="/estado_normas", tags=["Estado Normas"])
 app.include_router(programas_formacion.router, prefix="/programas_formacion",tags=["Programas Formación"])
->>>>>>> 5f7c10dd858d6c0dc75cface8220f4de5c29342d
 app.include_router(catalogo.router, prefix="/catalogo", tags=["Catalogo"])
 app.include_router(cargar_archivos_registro_calificado.router, prefix="/Registro-Calificado", tags=["Registro Calificado"])
 app.include_router(registro_calificado.router, prefix="/registro_calificado", tags=["Registro Calificado"])
