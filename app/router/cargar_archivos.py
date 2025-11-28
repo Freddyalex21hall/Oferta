@@ -7,7 +7,7 @@ from core.database import get_db
 
 router = APIRouter()
 
-@router.post("/cargar-archivos", tags=["cargar archivos"])
+@router.post("/cargar-archivos")
 async def upload_estado_normas(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
