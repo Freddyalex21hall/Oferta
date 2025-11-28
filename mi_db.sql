@@ -156,12 +156,8 @@ CREATE TABLE estado_de_normas (
 		ON DELETE CASCADE
 );
 
-DROP TABLE IF EXISTS registro_calificado;
-
-DROP TABLE IF EXISTS registro_calificado;
-
 CREATE TABLE IF NOT EXISTS `registro_calificado` (
-    `cod_programa` VARCHAR(16) NULL,
+    `cod_programa` VARCHAR(16) NOT NULL,
     `tipo_tramite` VARCHAR(50),
     `fecha_radicado` DATE,
     `numero_resolucion` MEDIUMINT,
@@ -175,6 +171,6 @@ CREATE TABLE IF NOT EXISTS `registro_calificado` (
     FOREIGN KEY (`cod_programa`)
         REFERENCES `programas_formacion`(`cod_programa`)
         ON UPDATE CASCADE
-        ON DELETE SET NULL
+        ON DELETE CASCADE
 );
 
