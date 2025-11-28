@@ -33,7 +33,25 @@ def crear_programa(db: Session, programa: CrearPrograma) -> bool:
 def listar_programas(db: Session):
     try:
         query = text("SELECT * FROM programas_formacion ORDER BY cod_programa ASC")
-        return db.execute(query).mappings().all()
+        rows = db.execute(query).mappings().all()
+        # Map DB column names to API response fields expected by RetornoPrograma
+        mapped = []
+        for r in rows:
+            mapped.append({
+                "cod_programa": str(r.get("cod_programa")) if r.get("cod_programa") is not None else None,
+                "version": r.get("cod_version") or (str(r.get("PRF_version")) if r.get("PRF_version") is not None else None),
+                "nombre": r.get("nombre_programa") or r.get("nombre"),
+                "nivel": r.get("nivel_formacion") or r.get("nivel"),
+                "meses_duracion": r.get("duracion_maxima"),
+                "duracion_programa": r.get("dur_etapa_productiva") or r.get("duracion_maxima"),
+                "unidad_medida": r.get("alamedida") or r.get("unidad_medida"),
+                "estado": r.get("estado"),
+                "tipo_programa": r.get("tipo_formacion") or r.get("tipo_programa"),
+                "url_pdf": r.get("url_pdf"),
+                "red_conocimiento": r.get("red_conocimiento"),
+                "programa_especial": r.get("programa_especial")
+            })
+        return mapped
     except SQLAlchemyError as e:
         logger.error(f"Error listar_programas: {e}")
         raise Exception("Error de base de datos al listar programas")
@@ -41,7 +59,23 @@ def listar_programas(db: Session):
 def obtener_programa_por_id(db: Session, cod_programa: int):
     try:
         query = text("SELECT * FROM programas_formacion WHERE cod_programa = :id")
-        return db.execute(query, {"id": cod_programa}).mappings().first()
+        r = db.execute(query, {"id": cod_programa}).mappings().first()
+        if not r:
+            return None
+        return {
+            "cod_programa": str(r.get("cod_programa")) if r.get("cod_programa") is not None else None,
+            "version": r.get("cod_version") or (str(r.get("PRF_version")) if r.get("PRF_version") is not None else None),
+            "nombre": r.get("nombre_programa") or r.get("nombre"),
+            "nivel": r.get("nivel_formacion") or r.get("nivel"),
+            "meses_duracion": r.get("duracion_maxima"),
+            "duracion_programa": r.get("dur_etapa_productiva") or r.get("duracion_maxima"),
+            "unidad_medida": r.get("alamedida") or r.get("unidad_medida"),
+            "estado": r.get("estado"),
+            "tipo_programa": r.get("tipo_formacion") or r.get("tipo_programa"),
+            "url_pdf": r.get("url_pdf"),
+            "red_conocimiento": r.get("red_conocimiento"),
+            "programa_especial": r.get("programa_especial")
+        }
     except SQLAlchemyError as e:
         logger.error(f"Error obtener_programa_por_id: {e}")
         raise Exception("Error de base de datos al obtener programa")
