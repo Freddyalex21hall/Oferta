@@ -7,7 +7,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame, allow_missing_programs: bool = False):
+def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame, allow_missing_programs: bool = True):
     """
     Inserta o actualiza registros en la tabla `registro_calificado`.
     Se usa `cod_programa` como clave primaria para INSERT ... ON DUPLICATE KEY UPDATE.
@@ -15,6 +15,7 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame, 
     insertados = 0
     actualizados = 0
     errores = []
+    created_placeholders = set()
 
     insert_sql = text("""
         INSERT INTO registro_calificado (
@@ -68,15 +69,39 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame, 
                 errores.append(f"Fila {idx}: cod_programa inválido o ausente")
                 continue
 
-            # Si no permitimos programas faltantes, verificar existencia en programas_formacion
-            if not allow_missing_programs:
-                try:
-                    exists_q = text("SELECT 1 FROM programas_formacion WHERE cod_programa = :cod LIMIT 1")
-                    exists = db.execute(exists_q, {"cod": params["cod_programa"]}).first()
-                except Exception:
-                    exists = None
+            # Verificar existencia en programas_formacion
+            try:
+                exists_q = text("SELECT 1 FROM programas_formacion WHERE cod_programa = :cod LIMIT 1")
+                exists = db.execute(exists_q, {"cod": params["cod_programa"]}).first()
+            except Exception:
+                exists = None
 
-                if not exists:
+            if not exists:
+                if allow_missing_programs:
+                    # Evitar intentar crear placeholder varias veces durante la misma carga
+                    if params["cod_programa"] in created_placeholders:
+                        # Ya intentamos crear el placeholder en esta ejecución
+                        pass
+                    else:
+                        # Crear un registro mínimo en programas_formacion para mantener la FK
+                        try:
+                            placeholder_sql = text("""
+                                INSERT INTO programas_formacion (cod_programa, nombre_programa, estado)
+                                VALUES (:cod_programa, :nombre_programa, :estado)
+                            """)
+                            ph_params = {
+                                "cod_programa": params["cod_programa"],
+                                "nombre_programa": f"AUTO-CREATED {params['cod_programa']}",
+                                "estado": True
+                            }
+                            db.execute(placeholder_sql, ph_params)
+                            created_placeholders.add(params["cod_programa"])
+                            # No commit aún; el commit se hará al final
+                        except Exception as e:
+                            errores.append(f"Fila {idx}: no se pudo crear programa placeholder para '{params['cod_programa']}': {e}")
+                            logger.error(f"Error creando placeholder programa: {e}")
+                            continue
+                else:
                     errores.append(
                         f"Fila {idx}: cod_programa '{params['cod_programa']}' no existe en 'programas_formacion' -> omitiendo para evitar violar FK"
                     )
