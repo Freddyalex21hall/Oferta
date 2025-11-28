@@ -9,7 +9,7 @@ CREATE TABLE rol(
 );
 
 CREATE TABLE programas_formacion (
-  cod_programa MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  cod_programa INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   version VARCHAR(20),
   nombre VARCHAR(255) NOT NULL,
   nivel VARCHAR(100),
@@ -23,11 +23,11 @@ CREATE TABLE programas_formacion (
   programa_especial MEDIUMINT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla 'grupo' que relaciona fichas/grupos con programas_formacion (n:1 -> cod_programa)
-CREATE TABLE grupo (
+-- Tabla 'grupos' que relaciona fichas/grupos con programas_formacion (n:1 -> cod_programa)
+CREATE TABLE grupos (
   ficha integer NOT NULL PRIMARY KEY,
   cod_centro INT NOT NULL,
-  cod_programa MEDIUMINT UNSIGNED NOT NULL,
+  cod_programa INT UNSIGNED NOT NULL,
   la_version VARCHAR(50),
   estado_grupo VARCHAR(100),
   nombre_nivel VARCHAR(100),
@@ -50,9 +50,9 @@ CREATE TABLE grupo (
 
 CREATE TABLE estado_de_normas (
   id_estado_norma MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  cod_programa MEDIUMINT UNSIGNED NOT NULL,
+  cod_programa INT UNSIGNED NOT NULL,
   cod_version VARCHAR(50) NOT NULL,
-  fecha_elaboracion DATE NOT NULL,
+  fecha_elaboracion DATE NULL,
   anio SMALLINT NOT NULL,
   red_conocimiento VARCHAR(150),
   nombre_ncl VARCHAR(150),
