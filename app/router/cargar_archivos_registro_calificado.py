@@ -66,7 +66,7 @@ async def upload_excel_registro_calificado(
     columnas_mapeo = {
         "codigo programa": "cod_programa",
         "cod programa": "cod_programa",
-        "cod del programa": "cod_programa",
+        "COD DEL PROGRAMA": "cod_programa",
         "codigo": "cod_programa",
         "cod": "cod_programa",
 
