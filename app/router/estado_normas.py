@@ -10,7 +10,7 @@ from app.crud.estado_normas import (
     eliminar_estado_norma,
 )
 
-router = APIRouter(prefix="/estado_normas", tags=["Estado de Normas"])
+router = APIRouter(prefix="/estado_normas", tags=["Estado Normas"])
 
 
 # ---------------------------------------------------------
