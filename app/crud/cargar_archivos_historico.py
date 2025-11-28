@@ -6,6 +6,23 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+HISTORICO_COLUMNAS = [
+    "num_aprendices_inscritos",
+    "num_aprendices_en_transito",
+    "num_aprendices_formacion",
+    "num_aprendices_induccion",
+    "num_aprendices_condicionados",
+    "num_aprendices_aplazados",
+    "num_aprendices_retirado_voluntario",
+    "num_aprendices_cancelados",
+    "num_aprendices_reprobados",
+    "num_aprendices_no_aptos",
+    "num_aprendices_reingresados",
+    "num_aprendices_por_certificar",
+    "num_aprendices_certificados",
+    "num_aprendices_trasladados",
+]
+
 def insertar_historico_completo_en_bd(db: Session, df_completo):
     """
     Inserta/actualiza grupos e histórico desde un archivo Excel completo.
@@ -60,7 +77,12 @@ def insertar_historico_completo_en_bd(db: Session, df_completo):
             errores.extend(errores_aux)
         
         # 2. Procesar histórico para TODOS los registros (con y sin grupo)
-        registros_historico_insertados, registros_historico_actualizados, errores_aux = \
+        (
+            registros_historico_insertados,
+            registros_historico_actualizados,
+            registros_historico_descartados,
+            errores_aux,
+        ) = \
             insertar_actualizar_historico(db, df_completo)
         errores.extend(errores_aux)
         # Commit de la transacción
@@ -69,7 +91,8 @@ def insertar_historico_completo_en_bd(db: Session, df_completo):
         logger.info(
             f"Carga completa - Grupos creados: {grupos_creados}, "
             f"Histórico insertados: {registros_historico_insertados}, "
-            f"Histórico actualizados: {registros_historico_actualizados}"
+            f"Histórico actualizados: {registros_historico_actualizados}, "
+            f"Histórico descartados: {registros_historico_descartados}"
         )
 
     except Exception as e:
@@ -82,6 +105,7 @@ def insertar_historico_completo_en_bd(db: Session, df_completo):
     return {
         "registros_insertados": registros_historico_insertados,
         "registros_actualizados": registros_historico_actualizados,
+        "registros_descartados": registros_historico_descartados,
         "grupos_creados": grupos_creados,
         "programas_creados": programas_creados,
         "centros_creados": centros_creados,
@@ -300,68 +324,44 @@ def crear_grupos_desde_df(db: Session, df):
 
 
 def insertar_actualizar_historico(db: Session, df):
-    """Inserta o actualiza registros históricos"""
+    """Inserta o actualiza registros históricos. Descarta los que no cambian."""
     registros_insertados = 0
     registros_actualizados = 0
+    registros_descartados = 0
     errores = []
-    
-    insert_historico_sql = text("""
+
+    campos_update = ", ".join([f"{col} = :{col}" for col in HISTORICO_COLUMNAS])
+
+    insert_historico_sql = text(f"""
         INSERT INTO historico (
             id_grupo,
-            num_aprendices_inscritos,
-            num_aprendices_en_transito,
-            num_aprendices_formacion,
-            num_aprendices_induccion,
-            num_aprendices_condicionados,
-            num_aprendices_aplazados,
-            num_aprendices_retirado_voluntario,
-            num_aprendices_cancelados,
-            num_aprendices_reprobados,
-            num_aprendices_no_aptos,
-            num_aprendices_reingresados,
-            num_aprendices_por_certificar,
-            num_aprendices_certificados,
-            num_aprendices_trasladados
+            {", ".join(HISTORICO_COLUMNAS)}
         ) VALUES (
             :id_grupo,
-            :num_aprendices_inscritos,
-            :num_aprendices_en_transito,
-            :num_aprendices_formacion,
-            :num_aprendices_induccion,
-            :num_aprendices_condicionados,
-            :num_aprendices_aplazados,
-            :num_aprendices_retirado_voluntario,
-            :num_aprendices_cancelados,
-            :num_aprendices_reprobados,
-            :num_aprendices_no_aptos,
-            :num_aprendices_reingresados,
-            :num_aprendices_por_certificar,
-            :num_aprendices_certificados,
-            :num_aprendices_trasladados
+            {", ".join([f":{col}" for col in HISTORICO_COLUMNAS])}
         )
-        ON DUPLICATE KEY UPDATE
-            num_aprendices_inscritos = VALUES(num_aprendices_inscritos),
-            num_aprendices_en_transito = VALUES(num_aprendices_en_transito),
-            num_aprendices_formacion = VALUES(num_aprendices_formacion),
-            num_aprendices_induccion = VALUES(num_aprendices_induccion),
-            num_aprendices_condicionados = VALUES(num_aprendices_condicionados),
-            num_aprendices_aplazados = VALUES(num_aprendices_aplazados),
-            num_aprendices_retirado_voluntario = VALUES(num_aprendices_retirado_voluntario),
-            num_aprendices_cancelados = VALUES(num_aprendices_cancelados),
-            num_aprendices_reprobados = VALUES(num_aprendices_reprobados),
-            num_aprendices_no_aptos = VALUES(num_aprendices_no_aptos),
-            num_aprendices_reingresados = VALUES(num_aprendices_reingresados),
-            num_aprendices_por_certificar = VALUES(num_aprendices_por_certificar),
-            num_aprendices_certificados = VALUES(num_aprendices_certificados),
-            num_aprendices_trasladados = VALUES(num_aprendices_trasladados)
     """)
-    
+
+    update_historico_sql = text(f"""
+        UPDATE historico
+        SET {campos_update}
+        WHERE id_grupo = :id_grupo
+    """)
+
+    select_historico_sql = text(f"""
+        SELECT id_grupo,
+            {", ".join(HISTORICO_COLUMNAS)}
+        FROM historico
+        WHERE id_grupo = :id_grupo
+        LIMIT 1
+    """)
+
     for idx, row in df.iterrows():
         try:
             if "id_grupo" not in row or pd.isna(row["id_grupo"]):
                 errores.append(f"Error: id_grupo requerido en índice {idx}")
                 continue
-            
+
             params = {
                 "id_grupo": int(row["id_grupo"]),
                 "num_aprendices_inscritos": int(row.get("num_aprendices_inscritos", 0)) if "num_aprendices_inscritos" in row and pd.notna(row.get("num_aprendices_inscritos")) else 0,
@@ -379,116 +379,53 @@ def insertar_actualizar_historico(db: Session, df):
                 "num_aprendices_certificados": int(row.get("num_aprendices_certificados", 0)) if "num_aprendices_certificados" in row and pd.notna(row.get("num_aprendices_certificados")) else 0,
                 "num_aprendices_trasladados": int(row.get("num_aprendices_trasladados", 0)) if "num_aprendices_trasladados" in row and pd.notna(row.get("num_aprendices_trasladados")) else 0
             }
-            
-            result = db.execute(insert_historico_sql, params)
-            
-            if result.rowcount == 1:
+
+            existente = db.execute(select_historico_sql, {"id_grupo": params["id_grupo"]}).mappings().first()
+
+            if not existente:
+                db.execute(insert_historico_sql, params)
                 registros_insertados += 1
-            elif result.rowcount == 2:
-                registros_actualizados += 1
-                
+                continue
+
+            if all(existente.get(col) == params[col] for col in HISTORICO_COLUMNAS):
+                registros_descartados += 1
+                continue
+
+            db.execute(update_historico_sql, params)
+            registros_actualizados += 1
+
         except SQLAlchemyError as e:
-            errores.append(f"Error al insertar histórico (índice {idx}, id_grupo: {row.get('id_grupo', 'N/A')}): {str(e)}")
+            errores.append(f"Error al insertar/actualizar histórico (índice {idx}, id_grupo: {row.get('id_grupo', 'N/A')}): {str(e)}")
             logger.error(f"Error al insertar histórico: {e}")
-    
-    return registros_insertados, registros_actualizados, errores
+
+    return registros_insertados, registros_actualizados, registros_descartados, errores
 
 
 def insertar_historico_en_bd(db: Session, df_historico):
     """
     Inserta registros históricos de aprendices por grupo en la base de datos.
-    
-    Args:
-        db: Sesión de SQLAlchemy
-        df_historico: DataFrame con datos históricos de grupos
-        
-    Returns:
-        dict: Resumen de la operación con contadores y errores
     """
     registros_insertados = 0
     registros_actualizados = 0
+    registros_descartados = 0
     errores = []
 
     try:
-        insert_historico_sql = text("""
-            INSERT INTO historico (
-                id_grupo,
-                num_aprendices_inscritos,
-                num_aprendices_en_transito,
-                num_aprendices_formacion,
-                num_aprendices_induccion,
-                num_aprendices_condicionados,
-                num_aprendices_aplazados,
-                num_aprendices_retirado_voluntario,
-                num_aprendices_cancelados,
-                num_aprendices_reprobados,
-                num_aprendices_no_aptos,
-                num_aprendices_reingresados,
-                num_aprendices_por_certificar,
-                num_aprendices_certificados,
-                num_aprendices_trasladados
-            ) VALUES (
-                :id_grupo,
-                :num_aprendices_inscritos,
-                :num_aprendices_en_transito,
-                :num_aprendices_formacion,
-                :num_aprendices_induccion,
-                :num_aprendices_condicionados,
-                :num_aprendices_aplazados,
-                :num_aprendices_retirado_voluntario,
-                :num_aprendices_cancelados,
-                :num_aprendices_reprobados,
-                :num_aprendices_no_aptos,
-                :num_aprendices_reingresados,
-                :num_aprendices_por_certificar,
-                :num_aprendices_certificados,
-                :num_aprendices_trasladados
-            )
-            ON DUPLICATE KEY UPDATE
-                num_aprendices_inscritos = VALUES(num_aprendices_inscritos),
-                num_aprendices_en_transito = VALUES(num_aprendices_en_transito),
-                num_aprendices_formacion = VALUES(num_aprendices_formacion),
-                num_aprendices_induccion = VALUES(num_aprendices_induccion),
-                num_aprendices_condicionados = VALUES(num_aprendices_condicionados),
-                num_aprendices_aplazados = VALUES(num_aprendices_aplazados),
-                num_aprendices_retirado_voluntario = VALUES(num_aprendices_retirado_voluntario),
-                num_aprendices_cancelados = VALUES(num_aprendices_cancelados),
-                num_aprendices_reprobados = VALUES(num_aprendices_reprobados),
-                num_aprendices_no_aptos = VALUES(num_aprendices_no_aptos),
-                num_aprendices_reingresados = VALUES(num_aprendices_reingresados),
-                num_aprendices_por_certificar = VALUES(num_aprendices_por_certificar),
-                num_aprendices_certificados = VALUES(num_aprendices_certificados),
-                num_aprendices_trasladados = VALUES(num_aprendices_trasladados)
-        """)
+        (
+            registros_insertados,
+            registros_actualizados,
+            registros_descartados,
+            errores_aux,
+        ) = insertar_actualizar_historico(db, df_historico)
+        errores.extend(errores_aux)
 
-        for idx, row in df_historico.iterrows():
-            try:
-                params = row.to_dict()
-                params = {k: (None if pd.isna(v) else v) for k, v in params.items()}
-                
-                if not params.get('id_grupo'):
-                    msg = f"Error: id_grupo requerido en índice {idx}"
-                    errores.append(msg)
-                    logger.warning(msg)
-                    continue
-                
-                result = db.execute(insert_historico_sql, params)
-                
-                if result.rowcount == 1:
-                    registros_insertados += 1
-                elif result.rowcount == 2:
-                    registros_actualizados += 1
-                    
-            except SQLAlchemyError as e:
-                msg = f"Error al insertar histórico (índice {idx}, id_grupo: {row.get('id_grupo', 'N/A')}): {str(e)}"
-                errores.append(msg)
-                logger.error(msg)
-        # Commit de la transacción
         db.commit()
-        
+
         logger.info(
-            f"Carga de histórico completada - {registros_insertados} insertados, "
-            f"{registros_actualizados} actualizados"
+            "Carga de histórico completada - %s insertados, %s actualizados, %s descartados",
+            registros_insertados,
+            registros_actualizados,
+            registros_descartados,
         )
 
     except Exception as e:
@@ -501,6 +438,7 @@ def insertar_historico_en_bd(db: Session, df_historico):
     return {
         "registros_insertados": registros_insertados,
         "registros_actualizados": registros_actualizados,
+        "registros_descartados": registros_descartados,
         "total_errores": len(errores),
         "errores": errores,
         "exitoso": len(errores) == 0,
