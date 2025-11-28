@@ -5,7 +5,7 @@ from io import BytesIO
 from app.crud.cargar_archivos import insertar_estado_normas
 from core.database import get_db
 
-router = APIRouter(prefix="/cargar-archivos", tags=["cargar archivos"])
+router = APIRouter()
 
 @router.post("/estado-normas/")
 async def upload_estado_normas(
