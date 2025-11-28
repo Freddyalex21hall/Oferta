@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.router import usuarios, auth, programas, programas_formacion, historico, cargar_archivos_historico, estado_normas, catalogo, cargar_archivos_registro_calificado
+from app.router import usuarios, auth, programas, programas_formacion, historico, cargar_archivos_historico, estado_normas, catalogo, cargar_archivos_registro_calificado, registro_calificado
 
 app = FastAPI()
 
@@ -16,6 +16,7 @@ app.include_router(estado_normas.router, prefix="/estado-normas", tags=["Estado 
 app.include_router(programas_formacion.router, prefix="/programas-formacion",tags=["Programas de Formación"])
 app.include_router(catalogo.router, prefix="/catalogo", tags=["Catalogo"])
 app.include_router(cargar_archivos_registro_calificado.router, prefix="/Registro-Calificado", tags=["Registro Calificado"])
+app.include_router(registro_calificado.router, prefix="/registro_calificado", tags=["Registro Calificado"])
 # Configuración de CORS para permitir todas las solicitudes desde cualquier origen
 app.add_middleware(
     CORSMiddleware,

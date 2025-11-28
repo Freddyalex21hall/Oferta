@@ -11,7 +11,6 @@ from app.schemas.usuarios import RetornoUsuario
 
 router = APIRouter()
 
-
 @router.post("/upload-excel-registro-calificado/")
 async def upload_excel_registro_calificado(
     file: UploadFile = File(...),
