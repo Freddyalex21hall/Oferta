@@ -15,7 +15,8 @@ class RegistroCalificadoBase(BaseModel):
 
 
 class CrearRegistroCalificado(RegistroCalificadoBase):
-    cod_programa: int = Field(gt=0)
+    cod_programa: str = Field(min_length=1, max_length=16)
+
 
 
 class RetornoRegistroCalificado(RegistroCalificadoBase):
