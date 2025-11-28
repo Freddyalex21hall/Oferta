@@ -70,7 +70,7 @@ CREATE TABLE programas_formacion (
     `fic` VARCHAR(2),                     -- FIC (NO/SI)
     `tipo_permiso` VARCHAR(30),                    -- TIPO PERMISO
     `multiple_inscripcion` VARCHAR(2),                     -- Multiple Inscripcion
-    `indice` VARCHAR(20),                    -- Indice
+    `indice` VARCHAR(255),                    
     `ocupacion` VARCHAR(60),                   -- Ocupación
     `estado` BOOLEAN,
     `url_pdf` VARCHAR(250),
