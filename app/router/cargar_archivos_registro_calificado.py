@@ -124,17 +124,76 @@ async def upload_excel_registro_calificado(
                 df = df.rename(columns={orig_col: "cod_programa"})
                 break
 
+    # Si aún no se encuentra, intentar localizar fila de encabezado en otras filas
+    header_found = False
+    header_row_used = None
+    if "cod_programa" not in df.columns:
+        try:
+            raw = pd.read_excel(BytesIO(contents), engine="openpyxl", header=None, dtype=str)
+            max_check_rows = min(25, raw.shape[0])
+            # Crear conjunto de alias normalizados a buscar
+            norm_aliases = {normalize_colname(a) for a in columnas_mapeo.keys()}
+
+            for r in range(max_check_rows):
+                candidate = raw.iloc[r].fillna("").astype(str).tolist()
+                candidate_norm = [normalize_colname(c) for c in candidate]
+                # Si aparece algún alias en esta fila, usarla como encabezado
+                if any(c in norm_aliases for c in candidate_norm):
+                    # reconstruir df usando esta fila como header
+                    try:
+                        df = pd.read_excel(BytesIO(contents), engine="openpyxl", header=r, dtype=str)
+                        header_found = True
+                        header_row_used = r
+                        break
+                    except Exception:
+                        continue
+
+            # Si no se encontró encabezado, intentar localizar la columna por contenido de celdas
+            if not header_found:
+                max_check_cells = min(50, raw.shape[0])
+                found_col_idx = None
+                for col in range(raw.shape[1]):
+                    for rowi in range(max_check_cells):
+                        cell = raw.iat[rowi, col]
+                        if pd.isna(cell):
+                            continue
+                        norm_cell = normalize_colname(cell)
+                        if "cod" in norm_cell and ("program" in norm_cell or "programa" in norm_cell or "codigo" in norm_cell):
+                            found_col_idx = col
+                            break
+                    if found_col_idx is not None:
+                        break
+
+                if found_col_idx is not None:
+                    # crear columna cod_programa a partir de esa columna y mantener el df actual
+                    try:
+                        raw_full = pd.read_excel(BytesIO(contents), engine="openpyxl", header=None, dtype=str)
+                        df_temp = raw_full.iloc[:, found_col_idx].astype(str).str.strip()
+                        df["cod_programa"] = df_temp.values[: len(df)]
+                        header_row_used = f"col_index_{found_col_idx}"
+                        header_found = True
+                    except Exception:
+                        pass
+        except Exception:
+            pass
     if "cod_programa" not in df.columns:
         # Preparar diagnóstico para facilitar debugging
         detected = list(df.columns)
         normalized = {c: normalize_colname(c) for c in detected}
         attempted = {alias: normalize_colname(alias) for alias in columnas_mapeo.keys()}
+        extra = {}
+        if 'header_row_used' in locals() and header_row_used is not None:
+            extra['header_row_used'] = header_row_used
+        else:
+            extra['header_row_used'] = None
+
         return {
             "exitoso": False,
             "mensaje": "No se encontró columna para 'cod_programa' en el archivo",
             "columnas_detectadas": detected,
             "columnas_normalizadas": normalized,
             "mapeo_intentado": attempted,
+            "info_extra": extra,
         }
 
     # Filtrar filas sin cod_programa
@@ -143,7 +202,8 @@ async def upload_excel_registro_calificado(
         return {"exitoso": False, "mensaje": "No hay filas con 'cod_programa' válido"}
 
     # Normalizar tipos
-    df["cod_programa"] = pd.to_numeric(df["cod_programa"], errors="coerce").astype("Int64")
+    # Mantener cod_programa como texto (la tabla en la DB es VARCHAR)
+    df["cod_programa"] = df["cod_programa"].astype(str).str.strip()
     if "numero_resolucion" in df.columns:
         df["numero_resolucion"] = pd.to_numeric(df["numero_resolucion"], errors="coerce").astype("Int64")
 
