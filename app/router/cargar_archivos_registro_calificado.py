@@ -70,22 +70,22 @@ async def upload_excel_registro_calificado(
         "codigo": "cod_programa",
         "cod": "cod_programa",
 
-        "tipo tramite": "tipo_tramite",
+        "TIPO DE TRÁMITE": "tipo_tramite",
         "tramite": "tipo_tramite",
 
-        "fecha radicado": "fecha_radicado",
+        "FECHA RADICADO": "fecha_radicado",
         "fecha rad": "fecha_radicado",
 
-        "numero resolucion": "numero_resolucion",
+        "NUMERO DE RESOLUCION": "numero_resolucion",
         "num resolucion": "numero_resolucion",
         "resolucion": "numero_resolucion",
 
-        "fecha resolucion": "fecha_resolucion",
-        "fecha vencimiento": "fecha_vencimiento",
+        "FECHA DE RESOLUCION": "fecha_resolucion",
+        "Fecha de vencimiento": "fecha_vencimiento",
 
-        "vigencia": "vigencia",
-        "modalidad": "modalidad",
-        "clasificacion": "clasificacion",
+        "VIGENCIA RC": "vigencia",
+        "MODALIDAD": "modalidad",
+        "CLASIFICACIÓN PARA TRÁMITE": "clasificacion",
         "estado catalogo": "estado_catalogo",
         "estado": "estado_catalogo",
     }
