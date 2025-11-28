@@ -61,8 +61,21 @@ async def upload_estado_normas(
     # ====== PROCESAR FILAS UNA A UNA ======
     for index, row in df.iterrows():
         try:
-            insertar_estado_normas(db, row)
-            cargados += 1
+            res = insertar_estado_normas(db, row)
+            # insertar_estado_normas debe devolver dict con 'registros_cargados' y 'errores'
+            if isinstance(res, dict):
+                if res.get("registros_cargados", 0) >= 1 and not res.get("errores"):
+                    cargados += 1
+                else:
+                    errores.append({
+                        "fila": index + 1,
+                        "error": res.get("errores") or res
+                    })
+            else:
+                errores.append({
+                    "fila": index + 1,
+                    "error": "Respuesta inesperada del inserter"
+                })
 
         except Exception as e:
             errores.append({

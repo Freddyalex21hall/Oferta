@@ -3,7 +3,7 @@ import logging
 import datetime
 from typing import Any, Dict
 from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -219,42 +219,126 @@ def insertar_estado_normas(db: Session, df_normas):
     insertados = 0
     errores = []
 
-    df = df_normas.to_dict()
+    # Aceptar tanto Series como dicts
+    if hasattr(df_normas, "to_dict"):
+        row = df_normas.to_dict()
+    elif isinstance(df_normas, dict):
+        row = df_normas
+    else:
+        # intentar convertir
+        try:
+            row = dict(df_normas)
+        except Exception:
+            row = {}
 
-    print(df['cod_programa'])
+    def _get(r, *keys):
+        for k in keys:
+            if k in r:
+                return r[k]
+        return None
 
+    # Normalizar y parsear los valores esperados
     try:
-            
+        cod_programa_raw = _get(row, 'cod_programa', 'COD PROGRAMA', 'cod_programa')
+        cod_programa = _to_int_safe(_safe_val(cod_programa_raw))
+
+        cod_version = _safe_val(_get(row, 'cod_version', 'CODIGO VERSION', 'cod_version'))
+        fecha_elaboracion = _parse_date(_get(row, 'fecha_elaboracion', 'Fecha Elaboracion', 'FECHA ELABORACION'))
+        anio = _to_int_safe(_safe_val(_get(row, 'anio', 'Año', 'ANIO')))
+        red_conocimiento = _safe_val(_get(row, 'red_conocimiento', 'RED CONOCIMIENTO'))
+        nombre_ncl = _safe_val(_get(row, 'nombre_ncl', 'NOMBRE_NCL', 'NOMBRE NCL'))
+        cod_ncl = _to_int_safe(_safe_val(_get(row, 'cod_ncl', 'NCL CODIGO', 'NCL_CODIGO')))
+        ncl_version = _to_int_safe(_safe_val(_get(row, 'ncl_version', 'NCL VERSION', 'NCL_VERSION')))
+        norma_corte_noviembre = _safe_val(_get(row, 'norma_corte_noviembre', 'Norma corte a NOVIEMBRE'))
+        version = _safe_val(_get(row, 'version', 'Versión', 'VERSION'))
+        norma_version = _safe_val(_get(row, 'norma_version', 'Norma - Versión', 'NORMA - VERSION'))
+        mesa_sectorial = _safe_val(_get(row, 'mesa_sectorial', 'Mesa Sectorial'))
+        tipo_norma = _safe_val(_get(row, 'tipo_norma', 'Tipo de Norma'))
+        observacion = _safe_val(_get(row, 'observacion', 'Observación', 'OBSERVACION'))
+        fecha_revision = _parse_date(_get(row, 'fecha_revision', 'Fecha de revisión', 'FECHA DE REVISION'))
+        tipo_competencia = _safe_val(_get(row, 'tipo_competencia', 'Tipo de competencia'))
+        vigencia = _safe_val(_get(row, 'vigencia', 'Vigencia'))
+        fecha_indice = _parse_date(_get(row, 'fecha_elaboracion_2', 'Fecha de Elaboración', 'fecha_elaboracion_2'))
+
         data = {
-            "cod_programa": df['cod_programa'],
-            "cod_version": df['cod_version'],
-            "fecha_elaboracion": df['fecha_elaboracion'],
-            "anio": df['anio'],
-            "red_conocimiento": df['red_conocimiento'],
-            "nombre_ncl": df['nombre_ncl'],
-            "cod_ncl": df['cod_ncl'],
-            "ncl_version": df['ncl_version'],
-            "norma_corte_noviembre": df['norma_corte_noviembre'],
-            "version": df['version'],
-            "norma_version": df['norma_version'],
-            "mesa_sectorial": df['mesa_sectorial'],
-            "tipo_norma": df['tipo_norma'],
-            "observacion": df['observacion'],
-            "fecha_revision": df['fecha_revision'],
-            "tipo_competencia": df['tipo_competencia'],
-            "vigencia": df['vigencia'],
-            "fecha_indice": df['fecha_elaboracion_2'],
+            "cod_programa": cod_programa,
+            "cod_version": cod_version,
+            "fecha_elaboracion": fecha_elaboracion,
+            "anio": anio,
+            "red_conocimiento": red_conocimiento,
+            "nombre_ncl": nombre_ncl,
+            "cod_ncl": cod_ncl,
+            "ncl_version": ncl_version,
+            "norma_corte_noviembre": norma_corte_noviembre,
+            "version": version,
+            "norma_version": norma_version,
+            "mesa_sectorial": mesa_sectorial,
+            "tipo_norma": tipo_norma,
+            "observacion": observacion,
+            "fecha_revision": fecha_revision,
+            "tipo_competencia": tipo_competencia,
+            "vigencia": vigencia,
+            "fecha_indice": fecha_indice,
         }
 
-        db.execute(insert_sql, data)
-        insertados += 1
+        # Ejecutar INSERT
+        try:
+            # Truncar campos que puedan exceder el tamaño de la columna
+            if data.get("nombre_ncl") and isinstance(data.get("nombre_ncl"), str):
+                data["nombre_ncl"] = data["nombre_ncl"][:150]
 
-    except SQLAlchemyError as e:
-        db.rollback()
-        errores.append(
-            {"error": str(e)}
-        )
-        logger.exception(f"Error insertando norma en fila: {e}")
+            db.execute(insert_sql, data)
+            insertados += 1
+        except IntegrityError as ie:
+            # IntegrityError, intentar crear placeholder en programas_formacion si es FK faltante
+            errstr = str(ie.__dict__.get('orig') or ie)
+            logger.warning(f"IntegrityError al insertar norma: {errstr}; intentando crear placeholder de programa")
+            try:
+                # Preparar código de programa como string
+                cp = data.get("cod_programa")
+                if cp is None:
+                    raise Exception("cod_programa ausente, no se puede crear placeholder")
+                cod_prog_str = str(cp)
+                placeholder_sql = text("""
+                    INSERT IGNORE INTO programas_formacion (
+                        cod_programa, nombre_programa, nivel_formacion, estado
+                    ) VALUES (
+                        :cod_programa, :nombre_programa, :nivel_formacion, :estado
+                    )
+                """)
+                ph_data = {
+                    "cod_programa": cod_prog_str,
+                    "nombre_programa": f"AUTO-CREATED {cod_prog_str}",
+                    "nivel_formacion": data.get("nivel_formacion") or None,
+                    "estado": True
+                }
+                db.execute(placeholder_sql, ph_data)
+                db.commit()
+                # Reintentar la inserción
+                try:
+                    db.execute(insert_sql, data)
+                    insertados += 1
+                except SQLAlchemyError as e2:
+                    db.rollback()
+                    err2 = str(e2.__dict__.get('orig') or e2)
+                    errores.append({"error": err2})
+                    logger.exception(f"Error insertando norma tras crear placeholder: {err2}")
+            except Exception as e_ph:
+                db.rollback()
+                errph = str(e_ph)
+                errores.append({"error": errstr})
+                logger.exception(f"No se pudo crear placeholder para programa: {errph}")
+        except SQLAlchemyError as e:
+            db.rollback()
+            errstr = str(e.__dict__.get('orig') or e)
+            errores.append({"error": errstr})
+            logger.exception(f"Error insertando norma en fila: {errstr}")
+
+    except Exception as e:
+        # error al preparar datos
+        errstr = str(e)
+        errores.append({"error_prepare": errstr})
+        logger.exception(f"Error preparando datos para insertar norma: {errstr}")
 
     # Confirmar la transacción
     try:
