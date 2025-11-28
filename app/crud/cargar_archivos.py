@@ -117,6 +117,7 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
             nombre = VALUES(nombre)
     """)
 
+
     for idx, row in df_programas.iterrows():
         try:
             cod_programa = _to_int_safe(row.get("cod_programa"))
