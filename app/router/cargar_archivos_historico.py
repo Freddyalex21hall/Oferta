@@ -24,26 +24,20 @@ async def upload_excel_historico(
     - Si el grupo NO existe: crea el grupo completo y luego el histórico
     """
     
-    # Leer archivo Excel - leer todas las columnas disponibles
     contents = await file.read()
     
-    # Intentar leer el archivo de forma flexible
-    # Primero intentar con skiprows=4, si falla intentar con otras opciones
     df = None
     skip_rows_options = [0, 1, 2, 3, 4, 5]
     
     for skip_rows in skip_rows_options:
         try:
-            # Leer solo el encabezado primero para verificar
             df_test = pd.read_excel(
                 BytesIO(contents),
                 engine="openpyxl",
                 skiprows=skip_rows,
                 nrows=0
             )
-            # Si tiene columnas, usar este skiprows
             if len(df_test.columns) > 0:
-                # Leer todas las columnas del archivo
                 df = pd.read_excel(
                     BytesIO(contents),
                     engine="openpyxl",
@@ -56,7 +50,6 @@ async def upload_excel_historico(
             print(f"Error al leer con skiprows={skip_rows}: {str(e)}")
             continue
     
-    # Si aún no se pudo leer, intentar sin skiprows
     if df is None:
         try:
             df = pd.read_excel(
@@ -91,9 +84,6 @@ async def upload_excel_historico(
     print(df.head())
     print("Columnas disponibles:", df.columns.tolist())
     print(df.dtypes)
-
-    # Mapeo de columnas del Excel a nombres de BD
-    # Columnas de identificación y grupos
     columnas_mapeo = {
         # Identificador principal
         "FICHA": "ficha",
@@ -153,46 +143,35 @@ async def upload_excel_historico(
         "TRASLADADOS": "num_aprendices_trasladados"
     }
     
-    # Limpiar nombres de columnas (eliminar espacios, convertir a mayúsculas para comparación)
     df.columns = df.columns.astype(str).str.strip()
     
-    # Renombrar columnas que existan en el DataFrame
-    # Manejar columnas duplicadas (pandas agrega .1, .2, etc.)
     columnas_renombrar = {}
     columnas_usadas = set()
     
-    # Crear un diccionario de columnas disponibles en mayúsculas para búsqueda flexible
     columnas_disponibles_upper = {col.upper().strip(): col for col in df.columns}
     
     for col_excel, col_bd in columnas_mapeo.items():
         col_excel_upper = col_excel.upper().strip()
         
-        # Buscar columna exacta (case-insensitive)
         col_encontrada = None
         if col_excel_upper in columnas_disponibles_upper:
             col_encontrada = columnas_disponibles_upper[col_excel_upper]
         else:
-            # Buscar columnas que contengan el nombre (búsqueda parcial)
             for col_upper, col_original in columnas_disponibles_upper.items():
                 if col_excel_upper in col_upper or col_upper in col_excel_upper:
-                    # Verificar que no sea una columna ya mapeada
                     if col_bd not in columnas_usadas:
                         col_encontrada = col_original
                         break
         
-        # Si encontramos la columna y no está ya mapeada
         if col_encontrada and col_bd not in columnas_usadas:
             columnas_renombrar[col_encontrada] = col_bd
             columnas_usadas.add(col_bd)
-            # Remover de la lista de disponibles para evitar duplicados
             if col_encontrada.upper().strip() in columnas_disponibles_upper:
                 del columnas_disponibles_upper[col_encontrada.upper().strip()]
     
     df = df.rename(columns=columnas_renombrar)
     
-    # Si no se encontró FICHA, intentar con otras variantes
     if "ficha" not in df.columns:
-        # Buscar columnas que puedan ser la ficha (búsqueda más flexible)
         posibles_fichas = []
         for col in df.columns:
             col_upper = col.upper().strip()
@@ -200,7 +179,6 @@ async def upload_excel_historico(
                 posibles_fichas.append(col)
         
         if posibles_fichas:
-            # Priorizar FICHA sobre IDENTIFICADOR
             ficha_col = None
             for col in posibles_fichas:
                 col_upper = col.upper().strip()
@@ -216,7 +194,6 @@ async def upload_excel_historico(
     print(df.head())
     print("Columnas después de renombrar:", df.columns.tolist())
 
-    # Validar que exista la columna ficha
     if "ficha" not in df.columns:
         return {
             "registros_insertados": 0,
@@ -228,7 +205,6 @@ async def upload_excel_historico(
             "mensaje": "El archivo debe contener una columna FICHA o IDENTIFICADOR_FICHA"
         }
 
-    # Eliminar filas con ficha faltante (campo obligatorio)
     df = df.dropna(subset=["ficha"])
     
     if len(df) == 0:
@@ -242,25 +218,21 @@ async def upload_excel_historico(
             "mensaje": "No se encontraron registros válidos para procesar"
         }
 
-    # Convertir ficha a numérico
     df["ficha"] = pd.to_numeric(df["ficha"], errors="coerce")
     df = df.dropna(subset=["ficha"])
     df["ficha"] = df["ficha"].astype("Int64")
     df["id_grupo"] = df["ficha"]
 
-    # Convertir columnas numéricas de grupos
     columnas_grupos_numericas = ["cod_centro", "cod_regional", "cod_programa", "cod_municipio"]
     for col in columnas_grupos_numericas:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # Convertir fechas
     if "fecha_inicio" in df.columns:
         df["fecha_inicio"] = pd.to_datetime(df["fecha_inicio"], errors="coerce").dt.date
     if "fecha_fin" in df.columns:
         df["fecha_fin"] = pd.to_datetime(df["fecha_fin"], errors="coerce").dt.date
 
-    # Convertir todas las columnas numéricas de aprendices (histórico)
     columnas_historico_numericas = [
         "num_aprendices_inscritos",
         "num_aprendices_matriculados",
@@ -287,19 +259,12 @@ async def upload_excel_historico(
     print(df.head())
     print("Columnas finales:", df.columns.tolist())
 
-    # Filtrar solo registros con cod_municipio que contenga "66"
     if "cod_municipio" in df.columns:
         registros_originales = len(df)
-        
-        # Convertir cod_municipio a string para verificar si contiene "66"
-        # Manejar valores NaN y numéricos correctamente (puede ser int, float o string)
         df["cod_municipio_str"] = df["cod_municipio"].apply(
             lambda x: str(x).replace(".0", "") if pd.notna(x) else ""
         )
-        # Filtrar filas donde cod_municipio contenga "66" (excluyendo valores vacíos/NaN)
         df_filtrado = df[df["cod_municipio_str"].str.contains("66", na=False)]
-        
-        # Eliminar la columna temporal
         df_filtrado = df_filtrado.drop(columns=["cod_municipio_str"])
         
         registros_filtrados = len(df_filtrado)
@@ -327,7 +292,6 @@ async def upload_excel_historico(
     else:
         logger.warning("No se encontró la columna cod_municipio en el DataFrame. No se aplicó filtro.")
 
-    # Insertar/actualizar grupos e histórico
     resultados = insertar_historico_completo_en_bd(db, df)
     
     return resultados
