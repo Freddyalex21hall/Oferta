@@ -38,17 +38,10 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame, 
             estado_catalogo = VALUES(estado_catalogo)
     """)
 
-    fk_disabled = False
-
-    # Si se permite importar aun cuando no existan los programas referenciados,
-    # deshabilitar temporalmente las comprobaciones de FK en la sesión.
-    if allow_missing_programs:
-        try:
-            db.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
-            fk_disabled = True
-        except Exception:
-            # No detener la carga por este fallo; solo registrar
-            errores.append("Advertencia: no se pudo deshabilitar FOREIGN_KEY_CHECKS")
+    # Nota: la lógica anterior podía deshabilitar comprobaciones de FK.
+    # Hoy preferimos no deshabilitar nunca las comprobaciones de la base de datos
+    # para mantener la integridad referencial. El parámetro `allow_missing_programs`
+    # se mantiene por compatibilidad pero no activa ninguna modificación del servidor.
 
     for idx, row in df_registros.iterrows():
         try:
@@ -100,12 +93,7 @@ def insertar_registro_calificado_en_bd(db: Session, df_registros: pd.DataFrame, 
             errores.append(msg)
             logger.error(msg)
 
-    # Reactivar FK checks si los deshabilitamos
-    if fk_disabled:
-        try:
-            db.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
-        except Exception as e:
-            errores.append(f"Advertencia: no se pudo reactivar FOREIGN_KEY_CHECKS: {e}")
+    # No reactivamos ni modificamos FOREIGN_KEY_CHECKS aquí (no se deshabilitó).
 
     # Commit once after loop
     try:
