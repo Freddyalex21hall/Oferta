@@ -94,9 +94,7 @@ def _to_int_safe(value: Any):
     return None
 
 
-# ---------------------------------------------------------
-# Función existente: insertar_datos_en_bd (mejoras pequeñas)
-# ---------------------------------------------------------
+# Función existente: insertar_datos_en_bd
 def insertar_datos_en_bd(db: Session, df_programas, df):
     """Inserta/actualiza programas (programas_formacion) y filas de grupos.
 
