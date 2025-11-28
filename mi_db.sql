@@ -132,29 +132,29 @@ CREATE TABLE IF NOT EXISTS `historico`(
     FOREIGN KEY (id_grupo) REFERENCES grupos(ficha)
 );
 CREATE TABLE estado_de_normas (
-	id_estado_norma MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-	cod_programa VARCHAR(16) NOT NULL,
-	cod_version VARCHAR(50) NOT NULL,
-	fecha_elaboracion DATE NOT NULL,
-	anio SMALLINT NOT NULL,
-	red_conocimiento VARCHAR(150),
-	nombre_ncl VARCHAR(150),
-	cod_ncl INT,
-	ncl_version SMALLINT,
-	norma_corte_noviembre VARCHAR(150),
-	version INT,
-	norma_version VARCHAR(100),
-	mesa_sectorial VARCHAR(150),
-	tipo_norma VARCHAR(80),
-	observacion VARCHAR(255),
-	fecha_revision DATE,
-	tipo_competencia VARCHAR(80),
-	vigencia VARCHAR(80),
-	fecha_indice VARCHAR(80),
-	CONSTRAINT fk_programa_norma FOREIGN KEY (cod_programa)
-		REFERENCES programas_formacion(cod_programa)
-		ON DELETE CASCADE
-);
+  id_estado_norma MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  cod_programa INT UNSIGNED NOT NULL,
+  cod_version VARCHAR(50) NOT NULL,
+  fecha_elaboracion DATE NULL,
+  anio SMALLINT NOT NULL,
+  red_conocimiento VARCHAR(150),
+  nombre_ncl VARCHAR(150),
+  cod_ncl INT,
+  ncl_version SMALLINT,
+  norma_corte_noviembre VARCHAR(150),
+  version INT,
+  norma_version VARCHAR(100),
+  mesa_sectorial VARCHAR(150),
+  tipo_norma VARCHAR(80),
+  observacion VARCHAR(255),
+  fecha_revision DATE,
+  tipo_competencia VARCHAR(80),
+  vigencia VARCHAR(80),
+  fecha_indice VARCHAR(80),
+  CONSTRAINT fk_programa_norma FOREIGN KEY (cod_programa)
+    REFERENCES programas_formacion(cod_programa)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `registro_calificado` (
     `cod_programa` VARCHAR(16) NOT NULL,

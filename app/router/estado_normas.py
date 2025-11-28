@@ -1,45 +1,65 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-from app.schemas.estado_normas import CrearEstadoNorma, EditarEstadoNorma, RetornoEstadoNorma
-from app.crud.estado_normas import (
-    crear_estado_norma, listar_normas, obtener_norma_por_id,
-    listar_normas_por_programa, actualizar_norma, eliminar_norma
-)
 from core.database import get_db
+from app.schemas.estado_normas import CrearEstadoNorma, EditarEstadoNorma
+from app.crud.estado_normas import (
+    crear_estado_norma,
+    listar_estado_normas,
+    obtener_estado_norma,
+    actualizar_estado_norma,
+    eliminar_estado_norma,
+)
 
-router = APIRouter(prefix="/estado_normas", tags=["Estado Normas"])
+router = APIRouter(prefix="/estado_normas", tags=["Estado de Normas"])
 
+
+# ---------------------------------------------------------
+# 1. Crear un registro
+# ---------------------------------------------------------
 @router.post("/crear", status_code=status.HTTP_201_CREATED)
-def crear(norma: CrearEstadoNorma, db: Session = Depends(get_db)):
-    # Opcional: validar que existe el programa antes de insertar (mejor práctica)
-    if crear_estado_norma(db, norma):
-        return {"message": "Norma creada correctamente"}
-    raise HTTPException(status_code=500, detail="Error al crear norma")
+def crear(data: CrearEstadoNorma, db: Session = Depends(get_db)):
+    return crear_estado_norma(db, data.dict())
 
-@router.get("/listar", response_model=List[RetornoEstadoNorma])
+
+# ---------------------------------------------------------
+# 2. Listar todos
+# ---------------------------------------------------------
+@router.get("/listar")
 def listar(db: Session = Depends(get_db)):
-    return listar_normas(db)
+    return listar_estado_normas(db)
 
-@router.get("/{id_norma}", response_model=RetornoEstadoNorma)
-def obtener(id_norma: int, db: Session = Depends(get_db)):
-    r = obtener_norma_por_id(db, id_norma)
-    if not r:
-        raise HTTPException(status_code=404, detail="Norma no encontrada")
-    return r
 
-@router.get("/programa/{cod_programa}", response_model=List[RetornoEstadoNorma])
-def listar_por_programa(cod_programa: int, db: Session = Depends(get_db)):
-    return listar_normas_por_programa(db, cod_programa)
+# ---------------------------------------------------------
+# 3. Obtener por ID
+# ---------------------------------------------------------
+@router.get("/obtener/{id}")
+def obtener(id: int, db: Session = Depends(get_db)):
+    norma = obtener_estado_norma(db, id)
+    if not norma:
+        raise HTTPException(status_code=404, detail="Estado de norma no encontrado")
+    return norma
 
-@router.put("/actualizar/{id_norma}")
-def actualizar(id_norma: int, data: EditarEstadoNorma, db: Session = Depends(get_db)):
-    if actualizar_norma(db, id_norma, data):
-        return {"message": "Norma actualizada correctamente"}
-    raise HTTPException(status_code=400, detail="No hay datos para actualizar")
 
-@router.delete("/eliminar/{id_norma}")
-def eliminar(id_norma: int, db: Session = Depends(get_db)):
-    if eliminar_norma(db, id_norma):
-        return {"message": "Norma eliminada correctamente"}
-    raise HTTPException(status_code=500, detail="Error al eliminar norma")
+# ---------------------------------------------------------
+# 4. Actualizar
+# ---------------------------------------------------------
+@router.put("/actualizar/{id}")
+def actualizar(id: int, data: EditarEstadoNorma, db: Session = Depends(get_db)):
+    actualizado = actualizar_estado_norma(db, id, data.dict(exclude_unset=True))
+
+    if not actualizado:
+        raise HTTPException(status_code=404, detail="Estado de norma no encontrado")
+
+    return {"mensaje": "Actualizado correctamente"}
+
+
+# ---------------------------------------------------------
+# 5. Eliminar
+# ---------------------------------------------------------
+@router.delete("/eliminar/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar(id: int, db: Session = Depends(get_db)):
+    eliminado = eliminar_estado_norma(db, id)
+    if not eliminado:
+        raise HTTPException(status_code=404, detail="Estado de norma no encontrado")
+
+    return {"mensaje": "Eliminado correctamente"}
