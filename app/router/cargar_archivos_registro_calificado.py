@@ -118,8 +118,25 @@ async def upload_excel_registro_calificado(
     df = df.rename(columns=columnas_renombrar)
 
     # Validar cod_programa
+    # Fallback heurístico: buscar columna cuyo nombre normalizado contenga 'cod' y 'program'
     if "cod_programa" not in df.columns:
-        return {"exitoso": False, "mensaje": "No se encontró columna para 'cod_programa' en el archivo"}
+        for norm_col, orig_col in {normalize_colname(c): c for c in df.columns}.items():
+            if "cod" in norm_col and ("program" in norm_col or "programa" in norm_col or "codigo" in norm_col):
+                df = df.rename(columns={orig_col: "cod_programa"})
+                break
+
+    if "cod_programa" not in df.columns:
+        # Preparar diagnóstico para facilitar debugging
+        detected = list(df.columns)
+        normalized = {c: normalize_colname(c) for c in detected}
+        attempted = {alias: normalize_colname(alias) for alias in columnas_mapeo.keys()}
+        return {
+            "exitoso": False,
+            "mensaje": "No se encontró columna para 'cod_programa' en el archivo",
+            "columnas_detectadas": detected,
+            "columnas_normalizadas": normalized,
+            "mapeo_intentado": attempted,
+        }
 
     # Filtrar filas sin cod_programa
     df = df.dropna(subset=["cod_programa"])
