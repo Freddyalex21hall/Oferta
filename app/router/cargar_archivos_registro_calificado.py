@@ -176,6 +176,19 @@ async def upload_excel_registro_calificado(
                         pass
         except Exception:
             pass
+
+    # Último intento: más agresivo, eliminar todo lo que no sea alfanumérico
+    if "cod_programa" not in df.columns:
+        for orig_col in list(df.columns):
+            try:
+                raw = str(orig_col).casefold()
+                # eliminar todo menos letras y numeros
+                raw_slim = re.sub(r"[^0-9a-z]", "", raw)
+                if "cod" in raw_slim and ("program" in raw_slim or "programa" in raw_slim or "codigo" in raw_slim):
+                    df = df.rename(columns={orig_col: "cod_programa"})
+                    break
+            except Exception:
+                continue
     if "cod_programa" not in df.columns:
         # Preparar diagnóstico para facilitar debugging
         detected = list(df.columns)
