@@ -11,6 +11,54 @@ from app.schemas.usuarios import RetornoUsuario
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
+def _eliminar_duplicados_historico(df: pd.DataFrame):
+    """
+    Elimina registros duplicados comparando la información completa del grupo/histórico.
+    Conserva la primera aparición del registro y descarta el resto.
+    """
+    columnas_comparacion = [
+        "id_grupo",
+        "ficha",
+        "cod_programa",
+        "cod_centro",
+        "modalidad",
+        "jornada",
+        "etapa_ficha",
+        "estado_curso",
+        "cod_municipio",
+        "cod_estrategia",
+        "num_aprendices_inscritos",
+        "num_aprendices_matriculados",
+        "num_aprendices_en_transito",
+        "num_aprendices_formacion",
+        "num_aprendices_induccion",
+        "num_aprendices_condicionados",
+        "num_aprendices_aplazados",
+        "num_aprendices_retirado_voluntario",
+        "num_aprendices_cancelados",
+        "num_aprendices_reprobados",
+        "num_aprendices_no_aptos",
+        "num_aprendices_reingresados",
+        "num_aprendices_por_certificar",
+        "num_aprendices_certificados",
+        "num_aprendices_trasladados",
+    ]
+
+    columnas_presentes = [col for col in columnas_comparacion if col in df.columns]
+    if not columnas_presentes:
+        return df, 0
+
+    df_sin_duplicados = df.drop_duplicates(subset=columnas_presentes, keep="first")
+    eliminados = len(df) - len(df_sin_duplicados)
+    if eliminados > 0:
+        logger.info(
+            "Se eliminaron %s registros duplicados basados en las columnas: %s",
+            eliminados,
+            ", ".join(columnas_presentes),
+        )
+    return df_sin_duplicados, eliminados
+
 @router.post("/upload-excel-historico/")
 async def upload_excel_historico(
     file: UploadFile = File(...),
@@ -258,6 +306,11 @@ async def upload_excel_historico(
     print("\nDataFrame procesado:")
     print(df.head())
     print("Columnas finales:", df.columns.tolist())
+
+    # Eliminar registros duplicados para evitar reprocesar la misma información
+    df, registros_duplicados = _eliminar_duplicados_historico(df)
+    if registros_duplicados:
+        logger.info("Total de registros duplicados descartados: %s", registros_duplicados)
 
     if "cod_municipio" in df.columns:
         registros_originales = len(df)
