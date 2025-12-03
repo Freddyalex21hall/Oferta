@@ -4,19 +4,19 @@ CREATE DATABASE railway CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE railway;
 
 CREATE TABLE rol(
-    id_rol SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    nombre_rol VARCHAR(20)
+    `id_rol` SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `nombre_rol` VARCHAR(20)
 );
 
 CREATE TABLE usuario(
-    id_usuario INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    nombre_completo VARCHAR(80),
-    num_documento CHAR(12),
-    correo VARCHAR(100) UNIQUE,
-    contra_encript VARCHAR(140),
-    id_rol SMALLINT UNSIGNED,
-    estado BOOLEAN,  -- True = 1 Activo   False = 0 Inactivo
-    FOREIGN KEY (id_rol) REFERENCES rol(id_rol)
+    `id_usuario` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `nombre_completo` VARCHAR(80),
+    `num_documento` CHAR(12),
+    `correo` VARCHAR(100) UNIQUE,
+    `contra_encript` VARCHAR(140),
+    `id_rol` SMALLINT UNSIGNED,
+    `estado` BOOLEAN,  -- True = 1 Activo   False = 0 Inactivo
+    FOREIGN KEY (`id_rol`) REFERENCES rol(`id_rol`)
 );
 
 --   dESDE AQUÍ
@@ -113,46 +113,47 @@ CREATE TABLE IF NOT EXISTS `grupos` (
 );
 
 CREATE TABLE IF NOT EXISTS `historico`(
-    id_historico INT AUTO_INCREMENT PRIMARY KEY,
-    id_grupo INTEGER UNSIGNED NOT NULL,  -- Cambiado de INT a INTEGER UNSIGNED
-    num_aprendices_inscritos SMALLINT,
-    num_aprendices_en_transito SMALLINT,
-    num_aprendices_formacion SMALLINT,
-    num_aprendices_induccion SMALLINT,
-    num_aprendices_condicionados SMALLINT,
-    num_aprendices_aplazados SMALLINT,
-    num_aprendices_retirado_voluntario SMALLINT,
-    num_aprendices_cancelados SMALLINT,
-    num_aprendices_reprobados SMALLINT,
-    num_aprendices_no_aptos SMALLINT,
-    num_aprendices_reingresados SMALLINT,
-    num_aprendices_por_certificar SMALLINT,
-    num_aprendices_certificados SMALLINT,
-    num_aprendices_trasladados SMALLINT,
-    FOREIGN KEY (id_grupo) REFERENCES grupos(ficha)
+    `id_historico` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_grupo` INTEGER UNSIGNED NOT NULL,  -- Cambiado de INT a INTEGER UNSIGNED
+    `num_aprendices_inscritos` SMALLINT,
+    `num_aprendices_en_transito` SMALLINT,
+    `num_aprendices_formacion` SMALLINT,
+    `num_aprendices_induccion` SMALLINT,
+    `num_aprendices_condicionados` SMALLINT,
+    `num_aprendices_aplazados` SMALLINT,
+    `num_aprendices_retirado_voluntario` SMALLINT,
+    `num_aprendices_cancelados` SMALLINT,
+    `num_aprendices_reprobados` SMALLINT,
+    `num_aprendices_no_aptos` SMALLINT,
+    `num_aprendices_reingresados` SMALLINT,
+    `num_aprendices_por_certificar` SMALLINT,
+    `num_aprendices_certificados` SMALLINT,
+    `num_aprendices_trasladados` SMALLINT,
+    FOREIGN KEY (`id_grupo`) REFERENCES `grupos`(`ficha`)
 );
+
 CREATE TABLE estado_de_normas (
-    id_estado_norma MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    cod_programa INT UNSIGNED NOT NULL,
-    cod_version VARCHAR(50) NOT NULL,
-    fecha_elaboracion DATE NULL,
-    anio SMALLINT NOT NULL,
-    red_conocimiento VARCHAR(150),
-    nombre_ncl VARCHAR(150),
-    cod_ncl INT,
-    ncl_version SMALLINT,
-    norma_corte_noviembre VARCHAR(150),
-    version INT,
-    norma_version VARCHAR(100),
-    mesa_sectorial VARCHAR(150),
-    tipo_norma VARCHAR(80),
-    observacion VARCHAR(255),
-    fecha_revision DATE,
-    tipo_competencia VARCHAR(80),
-    vigencia VARCHAR(80),
-    fecha_indice VARCHAR(80),
-    CONSTRAINT fk_programa_norma FOREIGN KEY (cod_programa)
-        REFERENCES programas_formacion(cod_programa)
+    `id_estado_norma` MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `cod_programa` INT UNSIGNED NOT NULL,
+    `cod_version` VARCHAR(50) NOT NULL,
+    `fecha_elaboracion` DATE NULL,
+    `anio` SMALLINT NOT NULL,
+    `red_conocimiento` VARCHAR(150),
+    `nombre_ncl` VARCHAR(150),
+    `cod_ncl` INT,
+    `ncl_version` SMALLINT,
+    `norma_corte_noviembre` VARCHAR(150),
+    `version` INT,
+    `norma_version` VARCHAR(100),
+    `mesa_sectorial` VARCHAR(150),
+    `tipo_norma` VARCHAR(80),
+    `observacion` VARCHAR(255),
+    `fecha_revision` DATE,
+    `tipo_competencia` VARCHAR(80),
+    `vigencia` VARCHAR(80),
+    `fecha_indice` VARCHAR(80),
+    CONSTRAINT fk_programa_norma FOREIGN KEY (`cod_programa`)
+        REFERENCES `programas_formacion`(`cod_programa`)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
