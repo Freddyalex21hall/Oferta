@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List
 
-from app.schemas.historico import EditarHistorico, RetornoHistorico
+from app.schemas.historico import RetornoHistorico
 from core.database import get_db
 from app.crud import historico as crud_historico
 from app.router.dependencies import get_current_user
@@ -11,6 +11,18 @@ from app.schemas.usuarios import RetornoUsuario
 
 router = APIRouter()
 
+@router.get("/obtener-todos", status_code=status.HTTP_200_OK)
+def get_all(
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db),
+    user_token: RetornoUsuario = Depends(get_current_user)
+):
+    try:
+        historicos = crud_historico.get_all_historicos(db, skip=skip, limit=limit)
+        return historicos
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/obtener-por-id/{id_historico}", status_code=status.HTTP_200_OK)
 def get_by_id(
@@ -27,18 +39,6 @@ def get_by_id(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/obtener-todos", status_code=status.HTTP_200_OK)
-def get_all(
-    skip: int = 0, 
-    limit: int = 100, 
-    db: Session = Depends(get_db),
-    user_token: RetornoUsuario = Depends(get_current_user)
-):
-    try:
-        historicos = crud_historico.get_all_historicos(db, skip=skip, limit=limit)
-        return historicos
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/obtener-por-grupo/{id_grupo}", status_code=status.HTTP_200_OK)
@@ -75,17 +75,57 @@ def get_by_ficha(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/editar/{historico_id}", status_code=status.HTTP_200_OK)
-def update_historico(
-    historico_id: int, 
-    historico: EditarHistorico, 
+@router.get("/obtener-por-cod_programa/{cod_programa}", status_code=status.HTTP_200_OK)
+def get_by_cod_programa(
+    cod_programa: str,
     db: Session = Depends(get_db),
     user_token: RetornoUsuario = Depends(get_current_user)
 ):
+    """
+    Obtiene el histórico asociado a un codigo de programa específico.
+    El codigo de programa es único y corresponde al cod_programa en la tabla grupos.
+    """
     try:
-        success = crud_historico.update_historico(db, historico_id, historico)
-        if not success:
-            raise HTTPException(status_code=400, detail="No se pudo actualizar el historico")
-        return {"message": "Historico actualizado correctamente"}
+        historico = crud_historico.get_historico_by_cod_programa(db, cod_programa)
+        if historico is None:
+            raise HTTPException(status_code=404, detail="No se encontró histórico para este codigo de programa")
+        return historico
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/obtener-por-cod_centro/{cod_centro}", status_code=status.HTTP_200_OK)
+def get_by_cod_centro(
+    cod_centro: str,
+    db: Session = Depends(get_db),
+    user_token: RetornoUsuario = Depends(get_current_user)
+):
+    """
+    Obtiene el histórico asociado a un codigo de programa específico.
+    El codigo de centro es único y corresponde al cod_centro en la tabla grupos.
+    """
+    try:
+        historico = crud_historico.get_historico_by_cod_centro(db, cod_centro)
+        if historico is None:
+            raise HTTPException(status_code=404, detail="No se encontró histórico para este codigo de centro")
+        return historico
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/obtener-por-jornada/{jornada}", status_code=status.HTTP_200_OK)
+def get_by_jornada(
+    jornada: str,
+    db: Session = Depends(get_db),
+    user_token: RetornoUsuario = Depends(get_current_user)
+):
+    """
+    Obtiene el histórico asociado a un jornada específico.
+    La jornada corresponde a la jornada en la tabla grupos.
+    """
+    try:
+        historico = crud_historico.get_historico_by_jornada(db, jornada)
+        if historico is None:
+            raise HTTPException(status_code=404, detail="No se encontró histórico para esta jornada")
+        return historico
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
