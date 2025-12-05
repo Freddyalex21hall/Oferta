@@ -46,7 +46,7 @@ class RetornoEstadoNorma(BaseModel):
     id_estado_norma: int
     cod_programa: int
     cod_version: str
-    fecha_elaboracion: date
+    fecha_elaboracion: Optional[date]
     anio: int
     red_conocimiento: Optional[str]
     nombre_ncl: Optional[str]
