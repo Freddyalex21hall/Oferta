@@ -1,10 +1,8 @@
-from time import timezone
 from passlib.context import CryptContext
 from passlib.exc import UnknownHashError
 from core.config import settings
 from datetime import datetime, timedelta, timezone
-import jwt
-from jose import JWTError, jwt
+from jose import JWTError, ExpiredSignatureError, jwt
 #pip install python-jose[cryptography]
 # Configurar hashing de contraseñas
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -33,7 +31,8 @@ def verify_password(plain_password: str, hashed_password: str):
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_access_token_expire_minutes)
-    to_encode.update({"exp": expire})
+    # jose accepts a numeric timestamp for 'exp'
+    to_encode.update({"exp": int(expire.timestamp())})
     encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
     return encoded_jwt
 
@@ -43,7 +42,7 @@ def verify_token(token: str):
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         user_id = payload.get("sub")
         return int(user_id) if user_id is not None else None
-    except jwt.ExpiredSignatureError: # Token ha expirado
+    except ExpiredSignatureError:
         return None
-    except JWTError as e:
+    except JWTError:
         return None
