@@ -76,3 +76,99 @@ def eliminar_registro(db: Session, cod_programa: str) -> bool:
         db.rollback()
         logger.error(f"Error eliminar_registro: {e}")
         raise Exception("Error de base de datos al eliminar registro calificado")
+
+
+# Funciones de consulta por campos y para obtener valores únicos (para select)
+def get_registros_by_modalidad(db: Session, modalidad: str):
+    try:
+        query = text("SELECT * FROM registro_calificado WHERE modalidad = :modalidad ORDER BY cod_programa ASC")
+        return db.execute(query, {"modalidad": modalidad}).mappings().all()
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_registros_by_modalidad: {e}")
+        raise Exception("Error de base de datos al obtener registros por modalidad")
+
+
+def get_distinct_modalidades(db: Session):
+    try:
+        query = text("SELECT DISTINCT modalidad FROM registro_calificado WHERE modalidad IS NOT NULL ORDER BY modalidad ASC")
+        result = db.execute(query).scalars().all()
+        return result
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_distinct_modalidades: {e}")
+        raise Exception("Error de base de datos al obtener modalidades distintas")
+
+
+def get_registros_by_clasificacion(db: Session, clasificacion: str):
+    try:
+        query = text("SELECT * FROM registro_calificado WHERE clasificacion = :clasificacion ORDER BY cod_programa ASC")
+        return db.execute(query, {"clasificacion": clasificacion}).mappings().all()
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_registros_by_clasificacion: {e}")
+        raise Exception("Error de base de datos al obtener registros por clasificacion")
+
+
+def get_distinct_clasificaciones(db: Session):
+    try:
+        query = text("SELECT DISTINCT clasificacion FROM registro_calificado WHERE clasificacion IS NOT NULL ORDER BY clasificacion ASC")
+        result = db.execute(query).scalars().all()
+        return result
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_distinct_clasificaciones: {e}")
+        raise Exception("Error de base de datos al obtener clasificaciones distintas")
+
+
+def get_registros_by_vigencia(db: Session, vigencia: str):
+    try:
+        query = text("SELECT * FROM registro_calificado WHERE vigencia = :vigencia ORDER BY cod_programa ASC")
+        return db.execute(query, {"vigencia": vigencia}).mappings().all()
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_registros_by_vigencia: {e}")
+        raise Exception("Error de base de datos al obtener registros por vigencia")
+
+
+def get_distinct_vigencias(db: Session):
+    try:
+        query = text("SELECT DISTINCT vigencia FROM registro_calificado WHERE vigencia IS NOT NULL ORDER BY vigencia ASC")
+        result = db.execute(query).scalars().all()
+        return result
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_distinct_vigencias: {e}")
+        raise Exception("Error de base de datos al obtener vigencias distintas")
+
+
+def get_registros_by_estado_catalogo(db: Session, estado_catalogo: str):
+    try:
+        query = text("SELECT * FROM registro_calificado WHERE estado_catalogo = :estado_catalogo ORDER BY cod_programa ASC")
+        return db.execute(query, {"estado_catalogo": estado_catalogo}).mappings().all()
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_registros_by_estado_catalogo: {e}")
+        raise Exception("Error de base de datos al obtener registros por estado_catalogo")
+
+
+def get_distinct_estado_catalogo(db: Session):
+    try:
+        query = text("SELECT DISTINCT estado_catalogo FROM registro_calificado WHERE estado_catalogo IS NOT NULL ORDER BY estado_catalogo ASC")
+        result = db.execute(query).scalars().all()
+        return result
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_distinct_estado_catalogo: {e}")
+        raise Exception("Error de base de datos al obtener estados de catalogo distintos")
+
+
+def get_registros_by_tipo_tramite(db: Session, tipo_tramite: str):
+    try:
+        query = text("SELECT * FROM registro_calificado WHERE tipo_tramite = :tipo_tramite ORDER BY cod_programa ASC")
+        return db.execute(query, {"tipo_tramite": tipo_tramite}).mappings().all()
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_registros_by_tipo_tramite: {e}")
+        raise Exception("Error de base de datos al obtener registros por tipo_tramite")
+
+
+def get_distinct_tipo_tramite(db: Session):
+    try:
+        query = text("SELECT DISTINCT tipo_tramite FROM registro_calificado WHERE tipo_tramite IS NOT NULL ORDER BY tipo_tramite ASC")
+        result = db.execute(query).scalars().all()
+        return result
+    except SQLAlchemyError as e:
+        logger.error(f"Error get_distinct_tipo_tramite: {e}")
+        raise Exception("Error de base de datos al obtener tipos de tramite distintos")
