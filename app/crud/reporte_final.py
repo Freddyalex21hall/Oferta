@@ -20,12 +20,12 @@ def get_unified_rows(db) -> pd.DataFrame:
     # Consulta base de programas con datos de registro y normas
     sql_programas = text("""
         SELECT p.cod_programa, p.cod_version, p.PRF_version, p.tipo_formacion, p.nombre_programa,
-               p.nivel_formacion, p.duracion_maxima, p.resolucion, p.fecha_resolucion as prf_fecha_resolucion,
-               p.modalidad, p.apuestas_prioritarias, p.red_conocimiento,
-               r.tipo_tramite AS registro_tipo_tramite,
-               r.numero_resolucion AS registro_num_resolucion,
-               r.fecha_resolucion AS registro_fecha_resolucion,
-               e.nombre_ncl AS norma_nombre_ncl, e.version AS norma_version
+            p.nivel_formacion, p.duracion_maxima, p.resolucion, p.fecha_resolucion as prf_fecha_resolucion,
+            p.modalidad, p.apuestas_prioritarias, p.red_conocimiento,
+            r.tipo_tramite AS registro_tipo_tramite,
+            r.numero_resolucion AS registro_num_resolucion,
+            r.fecha_resolucion AS registro_fecha_resolucion,
+            e.nombre_ncl AS norma_nombre_ncl, e.version AS norma_version
         FROM programas_formacion p
         LEFT JOIN registro_calificado r ON p.cod_programa = r.cod_programa
         LEFT JOIN estado_de_normas e ON p.cod_programa = e.cod_programa
@@ -37,13 +37,13 @@ def get_unified_rows(db) -> pd.DataFrame:
     # Agregaciones por programa desde grupos
     sql_grupos = text("""
         SELECT cod_programa,
-               COUNT(*) AS grupos_count,
-               SUM(COALESCE(cupo_asignado,0)) AS cupos_sum,
-               MIN(fecha_inicio) AS primera_fecha_inicio,
-               MAX(fecha_fin) AS ultima_fecha_fin,
-               GROUP_CONCAT(DISTINCT jornada) AS jornadas,
-               GROUP_CONCAT(DISTINCT cod_municipio) AS municipios,
-               GROUP_CONCAT(DISTINCT cod_centro) AS cod_centros
+            COUNT(*) AS grupos_count,
+            SUM(COALESCE(cupo_asignado,0)) AS cupos_sum,
+            MIN(fecha_inicio) AS primera_fecha_inicio,
+            MAX(fecha_fin) AS ultima_fecha_fin,
+            GROUP_CONCAT(DISTINCT jornada) AS jornadas,
+            GROUP_CONCAT(DISTINCT cod_municipio) AS municipios,
+            GROUP_CONCAT(DISTINCT cod_centro) AS cod_centros
         FROM grupos
         GROUP BY cod_programa
     """)
@@ -53,9 +53,9 @@ def get_unified_rows(db) -> pd.DataFrame:
     # Agregación historico por programa (uniendo por grupo -> programa)
     sql_historico = text("""
         SELECT g.cod_programa,
-               SUM(COALESCE(h.num_aprendices_inscritos,0)) AS inscritos_sum,
-               SUM(COALESCE(h.num_aprendices_en_transito,0)) AS inscritos_segunda,
-               SUM(COALESCE(h.num_aprendices_certificados,0)) AS certificados_sum
+            SUM(COALESCE(h.num_aprendices_inscritos,0)) AS inscritos_sum,
+            SUM(COALESCE(h.num_aprendices_en_transito,0)) AS inscritos_segunda,
+            SUM(COALESCE(h.num_aprendices_certificados,0)) AS certificados_sum
         FROM historico h
         JOIN grupos g ON g.ficha = h.id_grupo
         GROUP BY g.cod_programa
