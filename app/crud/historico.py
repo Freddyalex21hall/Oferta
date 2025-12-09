@@ -13,7 +13,7 @@ def get_all_historicos(db: Session, skip: int = 0, limit: int = 100) -> List[dic
     try:
         query = text("""
             SELECT 
-                grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
+                grupos.cod_regional ,grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
                 grupos.num_aprendices_matriculados, grupos.num_aprendices_activos,
