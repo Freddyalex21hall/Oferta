@@ -136,77 +136,169 @@ async def upload_excel_historico(
         # Identificador principal
         "FICHA": "ficha",
         "IDENTIFICADOR_FICHA": "ficha",
-        # Columnas de grupos - Centro
-        "CODIGO": "cod_centro",  # Primer CODIGO suele ser centro
+        # Columnas de grupos - Centro (múltiples variantes)
+        "CODIGO": "cod_centro",  # Se mapeará dinámicamente según contexto
         "CODIGO_CENTRO": "cod_centro",
-        "NOMBRE": "nombre_centro",  # Primer NOMBRE suele ser centro
+        "NOMBRE": "nombre_centro",  # Se mapeará dinámicamente según contexto
+        "NOMBR": "nombre_centro",  # Abreviación común
         "NOMBRE_CENTRO": "nombre_centro",
         "CODIGO_REGIONAL": "cod_regional",
+        "COD_REGIONAL": "cod_regional",
         "NOMBRE_REGIONAL": "nombre_regional",
+        "NOM_REGIONAL": "nombre_regional",
+        "DATOS": "datos_centro",  # Campo DATOS del Excel
         # Programa de formación
         "CODIGO_PROGRAMA": "cod_programa",
+        "COD_PROGRAMA": "cod_programa",
         "PROGRAMA_FORMACION": "nombre_programa",
+        "PROGRAMA": "nombre_programa",
         "VERSION": "version",
+        "VERSIOI": "version",  # Abreviación común
+        "VERSIÓN": "version",
         "NIVEL": "nivel",
+        "NIVEL F": "nivel",  # Con espacio
+        "NIVEL_FORMACION": "nivel",
         "JORNADA": "jornada",
+        "JORNAL": "jornada",  # Abreviación común
         "MODALIDAD": "modalidad",
+        "MODAL": "modalidad",  # Abreviación común
+        "FIC_MO": "modalidad",  # Campo FIC_MO del Excel
+        "TIPO PI": "tipo_programa",  # Tipo de programa
+        "TIPO_PROGRAMA": "tipo_programa",
         # Fechas y estado
         "FECHA_INICIO": "fecha_inicio",
+        "FECHA_INI": "fecha_inicio",
         "FECHA_FIN": "fecha_fin",
         "ESTADO": "estado_curso",
+        "ESTADO_CURSO": "estado_curso",
         "ETAPA_FICHA": "etapa_ficha",
+        "ETAPA": "etapa_ficha",
+        "MESES": "duracion_meses",
+        "DRURAL": "duracion",  # Campo DRURAL del Excel
+        "DURACION": "duracion",
         # Municipio
         "ID_MUNI": "cod_municipio",
+        "ID MUR": "cod_municipio",  # Campo ID MUR del Excel
         "MUNICIPIO": "nombre_municipio",
+        "MUNICI": "nombre_municipio",  # Abreviación común
         "CODIGO_MUNICIPIO": "cod_municipio",
+        "COD_MUNICIPIO": "cod_municipio",
         # Estrategia
         "FIC_MC": "cod_estrategia",
+        "FIC_MO": "cod_estrategia",  # También puede ser estrategia
         "CODIGO_ESTRATEGIA": "cod_estrategia",
+        "COD_ESTRATEGIA": "cod_estrategia",
         # Responsable y empresa
         "NOMBRE_RESPONSABLE": "nombre_responsable",
         "RESPONSABLE": "nombre_responsable",
         "NOMBRE_EMPRESA": "nombre_empresa",
         "EMPRESA": "nombre_empresa",
-        # Columnas de histórico
+        # Columnas de histórico - Variantes completas y abreviadas
         "INSCRITOS": "num_aprendices_inscritos",
+        "INSCRIT": "num_aprendices_inscritos",  # Abreviación común
+        "INSC": "num_aprendices_inscritos",
         "MATRICULADOS": "num_aprendices_matriculados",
+        "MATRIC": "num_aprendices_matriculados",  # Abreviación común
+        "MAT": "num_aprendices_matriculados",
         "EN_TRAINING": "num_aprendices_en_transito",
         "EN_TRANSITO": "num_aprendices_en_transito",
+        "EN TRA": "num_aprendices_en_transito",  # Con espacio
+        "EN_TRA": "num_aprendices_en_transito",
         "FORMACION": "num_aprendices_formacion",
+        "FORMA": "num_aprendices_formacion",  # Abreviación común
+        "FORM": "num_aprendices_formacion",
         "INDUCCION": "num_aprendices_induccion",
+        "INDUCO": "num_aprendices_induccion",  # Abreviación común
+        "INDUC": "num_aprendices_induccion",
         "CONDICION": "num_aprendices_condicionados",
         "CONDICIONADOS": "num_aprendices_condicionados",
+        "CONDIC": "num_aprendices_condicionados",  # Abreviación común
+        "COND": "num_aprendices_condicionados",
         "APLAZADOS": "num_aprendices_aplazados",
+        "APLAZA": "num_aprendices_aplazados",  # Abreviación común
+        "APLAZ": "num_aprendices_aplazados",
         "RETIRO": "num_aprendices_retirado_voluntario",
         "RETIRADO_VOLUNTARIO": "num_aprendices_retirado_voluntario",
+        "RETIRADO": "num_aprendices_retirado_voluntario",
+        "RET": "num_aprendices_retirado_voluntario",
         "CANCELADOS": "num_aprendices_cancelados",
+        "CANCEL": "num_aprendices_cancelados",  # Abreviación común
+        "CANC": "num_aprendices_cancelados",
         "REPROBADO": "num_aprendices_reprobados",
         "REPROBADOS": "num_aprendices_reprobados",
+        "REPROE": "num_aprendices_reprobados",  # Abreviación común
+        "REPRO": "num_aprendices_reprobados",
         "NO_APROBADO": "num_aprendices_no_aptos",
         "NO_APTOS": "num_aprendices_no_aptos",
+        "NO APT": "num_aprendices_no_aptos",  # Con espacio
+        "NO_APT": "num_aprendices_no_aptos",
         "REINGRESO": "num_aprendices_reingresados",
         "REINGRESADOS": "num_aprendices_reingresados",
+        "REINGR": "num_aprendices_reingresados",  # Abreviación común
+        "REING": "num_aprendices_reingresados",
         "POR_CERTIFICAR": "num_aprendices_por_certificar",
+        "POR CE": "num_aprendices_por_certificar",  # Con espacio
+        "POR_CE": "num_aprendices_por_certificar",
+        "POR_CERT": "num_aprendices_por_certificar",
         "CERTIFICADOS": "num_aprendices_certificados",
-        "TRASLADADOS": "num_aprendices_trasladados"
+        "CERTIFI": "num_aprendices_certificados",  # Abreviación común
+        "CERT": "num_aprendices_certificados",
+        "TRASLADADOS": "num_aprendices_trasladados",
+        "TRASLA": "num_aprendices_trasladados",  # Abreviación común
+        "TRASL": "num_aprendices_trasladados"
     }
     
     df.columns = df.columns.astype(str).str.strip()
     
+    # Normalizar espacios y caracteres especiales en nombres de columnas
+    def normalizar_nombre_columna(col):
+        """Normaliza el nombre de columna para comparación"""
+        if pd.isna(col):
+            return ""
+        col_str = str(col).strip()
+        # Reemplazar espacios múltiples por uno solo
+        col_str = " ".join(col_str.split())
+        return col_str
+    
+    df.columns = [normalizar_nombre_columna(col) for col in df.columns]
+    
     columnas_renombrar = {}
     columnas_usadas = set()
     
-    columnas_disponibles_upper = {col.upper().strip(): col for col in df.columns}
+    # Crear diccionario con todas las variantes posibles (con y sin espacios)
+    columnas_disponibles_upper = {}
+    for col in df.columns:
+        col_upper = col.upper().strip()
+        # Agregar variante exacta
+        columnas_disponibles_upper[col_upper] = col
+        # Agregar variante sin espacios
+        columnas_disponibles_upper[col_upper.replace(" ", "")] = col
+        # Agregar variante con guión bajo
+        columnas_disponibles_upper[col_upper.replace(" ", "_")] = col
     
+    # Mapeo prioritario: primero buscar coincidencias exactas, luego parciales
     for col_excel, col_bd in columnas_mapeo.items():
         col_excel_upper = col_excel.upper().strip()
+        col_excel_sin_espacios = col_excel_upper.replace(" ", "")
+        col_excel_con_guion = col_excel_upper.replace(" ", "_")
         
         col_encontrada = None
-        if col_excel_upper in columnas_disponibles_upper:
-            col_encontrada = columnas_disponibles_upper[col_excel_upper]
-        else:
+        
+        # 1. Buscar coincidencia exacta (con espacios, sin espacios, con guión)
+        for variante in [col_excel_upper, col_excel_sin_espacios, col_excel_con_guion]:
+            if variante in columnas_disponibles_upper:
+                col_candidata = columnas_disponibles_upper[variante]
+                if col_bd not in columnas_usadas:
+                    col_encontrada = col_candidata
+                    break
+        
+        # 2. Si no hay coincidencia exacta, buscar coincidencia parcial
+        if not col_encontrada:
             for col_upper, col_original in columnas_disponibles_upper.items():
-                if col_excel_upper in col_upper or col_upper in col_excel_upper:
+                # Buscar si el nombre del Excel está contenido en el nombre de la columna o viceversa
+                if (col_excel_upper in col_upper or col_upper in col_excel_upper or
+                    col_excel_sin_espacios in col_upper.replace(" ", "") or
+                    col_upper.replace(" ", "") in col_excel_sin_espacios):
                     if col_bd not in columnas_usadas:
                         col_encontrada = col_original
                         break
@@ -214,8 +306,59 @@ async def upload_excel_historico(
         if col_encontrada and col_bd not in columnas_usadas:
             columnas_renombrar[col_encontrada] = col_bd
             columnas_usadas.add(col_bd)
-            if col_encontrada.upper().strip() in columnas_disponibles_upper:
-                del columnas_disponibles_upper[col_encontrada.upper().strip()]
+            # Eliminar todas las variantes de la columna encontrada
+            col_encontrada_upper = col_encontrada.upper().strip()
+            variantes_a_eliminar = [
+                col_encontrada_upper,
+                col_encontrada_upper.replace(" ", ""),
+                col_encontrada_upper.replace(" ", "_")
+            ]
+            for variante in variantes_a_eliminar:
+                if variante in columnas_disponibles_upper:
+                    del columnas_disponibles_upper[variante]
+    
+    # Manejar columnas duplicadas (CODIGO, NOMBRE) según su posición
+    # Si hay múltiples columnas CODIGO o NOMBRE, intentar mapearlas según contexto
+    columnas_originales = list(df.columns)
+    
+    # Buscar columnas CODIGO y NOMBRE no mapeadas
+    codigos_sin_mapear = [i for i, col in enumerate(columnas_originales) 
+                         if col.upper().strip() in ["CODIGO", "COD"] 
+                         and col not in columnas_renombrar]
+    nombres_sin_mapear = [i for i, col in enumerate(columnas_originales) 
+                          if col.upper().strip() in ["NOMBRE", "NOMBR", "NOM"] 
+                          and col not in columnas_renombrar]
+    
+    # Mapear CODIGO según posición típica en el Excel:
+    # - Primera posición: cod_regional
+    # - Segunda posición: cod_centro  
+    # - Tercera posición: cod_programa
+    if codigos_sin_mapear:
+        if len(codigos_sin_mapear) >= 1 and "cod_regional" not in columnas_usadas:
+            col = columnas_originales[codigos_sin_mapear[0]]
+            columnas_renombrar[col] = "cod_regional"
+            columnas_usadas.add("cod_regional")
+        if len(codigos_sin_mapear) >= 2 and "cod_centro" not in columnas_usadas:
+            col = columnas_originales[codigos_sin_mapear[1]]
+            columnas_renombrar[col] = "cod_centro"
+            columnas_usadas.add("cod_centro")
+        if len(codigos_sin_mapear) >= 3 and "cod_programa" not in columnas_usadas:
+            col = columnas_originales[codigos_sin_mapear[2]]
+            columnas_renombrar[col] = "cod_programa"
+            columnas_usadas.add("cod_programa")
+    
+    # Mapear NOMBRE según posición típica:
+    # - Primera posición: nombre_regional
+    # - Segunda posición: nombre_centro
+    if nombres_sin_mapear:
+        if len(nombres_sin_mapear) >= 1 and "nombre_regional" not in columnas_usadas:
+            col = columnas_originales[nombres_sin_mapear[0]]
+            columnas_renombrar[col] = "nombre_regional"
+            columnas_usadas.add("nombre_regional")
+        if len(nombres_sin_mapear) >= 2 and "nombre_centro" not in columnas_usadas:
+            col = columnas_originales[nombres_sin_mapear[1]]
+            columnas_renombrar[col] = "nombre_centro"
+            columnas_usadas.add("nombre_centro")
     
     df = df.rename(columns=columnas_renombrar)
     
@@ -299,9 +442,14 @@ async def upload_excel_historico(
         "num_aprendices_trasladados"
     ]
 
+    # Convertir columnas numéricas preservando los valores exactos del Excel
     for col in columnas_historico_numericas:
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype("Int16")
+            # Primero convertir a numérico, preservando NaN para valores no numéricos
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+            # Solo reemplazar NaN por 0 si es necesario (valores vacíos), pero preservar 0 explícitos
+            # Usar Int64 nullable para preservar valores exactos y permitir NaN
+            df[col] = df[col].fillna(0).astype("Int64")
 
     print("\nDataFrame procesado:")
     print(df.head())
