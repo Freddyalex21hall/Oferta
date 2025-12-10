@@ -49,34 +49,32 @@ def insertar_historico_completo_en_bd(db: Session, df_completo):
     errores = []
 
     try:
-        # Obtener todas las fichas del DataFrame
         fichas = df_completo["ficha"].unique().tolist()
-        # Verificar qué fichas ya existen en grupos
         query_grupos_existentes = text("""
             SELECT ficha 
             FROM grupos 
             WHERE ficha IN :fichas
         """)
-        
         result = db.execute(query_grupos_existentes, {"fichas": tuple(fichas)})
         fichas_existentes = {row.ficha for row in result}
-        
-        # Separar registros: los que tienen grupo y los que no
+
         df_con_grupo = df_completo[df_completo["ficha"].isin(fichas_existentes)].copy()
         df_sin_grupo = df_completo[~df_completo["ficha"].isin(fichas_existentes)].copy()
-        
+
         logger.info(f"Registros con grupo existente: {len(df_con_grupo)}, sin grupo: {len(df_sin_grupo)}")
-        
-        # 1. Procesar registros SIN grupo: crear grupos primero
+
+        programas_creados, centros_creados, municipios_creados, estrategias_creadas, errores_aux = \
+            crear_dependencias_grupos(db, df_completo)
+        errores.extend(errores_aux)
+
         if len(df_sin_grupo) > 0:
-            programas_creados, centros_creados, municipios_creados, estrategias_creadas, errores_aux = \
-                crear_dependencias_grupos(db, df_sin_grupo)
-            errores.extend(errores_aux)
-            
             grupos_creados, errores_aux = crear_grupos_desde_df(db, df_sin_grupo)
             errores.extend(errores_aux)
-        
-        # 2. Procesar histórico para TODOS los registros (con y sin grupo)
+
+        if len(df_con_grupo) > 0:
+            actualizados_grupos, errores_aux = actualizar_grupos_desde_df(db, df_con_grupo)
+            errores.extend(errores_aux)
+
         (
             registros_historico_insertados,
             registros_historico_actualizados,
@@ -107,6 +105,7 @@ def insertar_historico_completo_en_bd(db: Session, df_completo):
         "registros_actualizados": registros_historico_actualizados,
         "registros_descartados": registros_historico_descartados,
         "grupos_creados": grupos_creados,
+        "grupos_actualizados": actualizados_grupos if 'actualizados_grupos' in locals() else 0,
         "programas_creados": programas_creados,
         "centros_creados": centros_creados,
         "municipios_creados": municipios_creados,
@@ -127,7 +126,7 @@ def crear_dependencias_grupos(db: Session, df):
     errores = []
     
     # 1. Crear programas de formación
-    if "cod_programa" in df.columns and "nombre_programa" in df.columns:
+    if "cod_programa" in df.columns:
         cols_programa = ["cod_programa"]
         if "version" in df.columns:
             cols_programa.append("version")
@@ -156,27 +155,51 @@ def crear_dependencias_grupos(db: Session, df):
                 params = {
                     "cod_programa": str(row["cod_programa"]) if pd.notna(row["cod_programa"]) else None,
                     "cod_version": str(row["version"]) if "version" in row and pd.notna(row.get("version")) else None,
-                    "nombre_programa": str(row["nombre_programa"]) if "nombre_programa" in row and pd.notna(row["nombre_programa"]) else None,
+                    "nombre_programa": str(row["nombre_programa"]) if "nombre_programa" in row and pd.notna(row.get("nombre_programa")) else None,
                     "nivel_formacion": str(row["nivel"]) if "nivel" in row and pd.notna(row.get("nivel")) else None
                 }
                 if params["cod_programa"]:
                     result = db.execute(insert_programa_sql, params)
-                    if result.rowcount == 1:
+                    if result.rowcount >= 0:  # Puede ser 0 si ya existe (ON DUPLICATE KEY UPDATE)
                         programas_creados += 1
             except SQLAlchemyError as e:
-                errores.append(f"Error al crear programa (índice {idx}): {str(e)}")
+                errores.append(f"Error al crear programa (índice {idx}, cod_programa: {row.get('cod_programa', 'N/A')}): {str(e)}")
                 logger.error(f"Error al crear programa: {e}")
     
-    # 2. Crear centros de formación
-    if "cod_centro" in df.columns and "nombre_centro" in df.columns:
-        cols_centro = ["cod_centro", "nombre_centro"]
+    # 2. Crear/actualizar centros de formación
+    # Primero verificar si el centro existe en la BD para usar su información
+    if "cod_centro" in df.columns:
+        cols_centro = ["cod_centro"]
+        if "nombre_centro" in df.columns:
+            cols_centro.append("nombre_centro")
         if "cod_regional" in df.columns:
             cols_centro.append("cod_regional")
         if "nombre_regional" in df.columns:
             cols_centro.append("nombre_regional")
         
-        df_centros = df[cols_centro].drop_duplicates()
+        df_centros = df[cols_centro].drop_duplicates(subset=["cod_centro"])
         df_centros = df_centros.dropna(subset=["cod_centro"])
+        
+        # Consultar centros existentes en la BD
+        cod_centros_existentes = df_centros["cod_centro"].unique().tolist()
+        query_centros_existentes = text("""
+            SELECT cod_centro, nombre_centro, cod_regional, nombre_regional
+            FROM centros_formacion
+            WHERE cod_centro IN :cod_centros
+        """)
+        
+        centros_bd = {}
+        if cod_centros_existentes:
+            try:
+                result = db.execute(query_centros_existentes, {"cod_centros": tuple(cod_centros_existentes)})
+                for row in result:
+                    centros_bd[int(row.cod_centro)] = {
+                        "nombre_centro": row.nombre_centro,
+                        "cod_regional": row.cod_regional,
+                        "nombre_regional": row.nombre_regional
+                    }
+            except SQLAlchemyError as e:
+                logger.warning(f"Error al consultar centros existentes: {e}")
         
         insert_centro_sql = text("""
             INSERT INTO centros_formacion (
@@ -192,19 +215,31 @@ def crear_dependencias_grupos(db: Session, df):
         
         for idx, row in df_centros.iterrows():
             try:
+                cod_centro = int(row["cod_centro"]) if pd.notna(row["cod_centro"]) else None
+                if not cod_centro:
+                    continue
+                
+                # Si el centro existe en BD, usar sus datos como base
+                centro_existente = centros_bd.get(cod_centro, {})
+                
+                # Priorizar datos del Excel, pero si faltan, usar los de la BD
+                nombre_centro = str(row["nombre_centro"]) if "nombre_centro" in row and pd.notna(row.get("nombre_centro")) else centro_existente.get("nombre_centro")
+                cod_regional = int(row["cod_regional"]) if "cod_regional" in row and pd.notna(row.get("cod_regional")) else (centro_existente.get("cod_regional") if centro_existente.get("cod_regional") is not None else None)
+                nombre_regional = str(row["nombre_regional"]) if "nombre_regional" in row and pd.notna(row.get("nombre_regional")) else centro_existente.get("nombre_regional")
+                
                 params = {
-                    "cod_centro": int(row["cod_centro"]) if pd.notna(row["cod_centro"]) else None,
-                    "nombre_centro": str(row["nombre_centro"]) if pd.notna(row["nombre_centro"]) else None,
-                    "cod_regional": int(row["cod_regional"]) if "cod_regional" in row and pd.notna(row.get("cod_regional")) else None,
-                    "nombre_regional": str(row["nombre_regional"]) if "nombre_regional" in row and pd.notna(row.get("nombre_regional")) else None
+                    "cod_centro": cod_centro,
+                    "nombre_centro": nombre_centro,
+                    "cod_regional": cod_regional,
+                    "nombre_regional": nombre_regional
                 }
-                if params["cod_centro"]:
-                    result = db.execute(insert_centro_sql, params)
-                    if result.rowcount == 1:
-                        centros_creados += 1
-            except SQLAlchemyError as e:
-                errores.append(f"Error al crear centro (índice {idx}): {str(e)}")
-                logger.error(f"Error al crear centro: {e}")
+                
+                result = db.execute(insert_centro_sql, params)
+                if result.rowcount == 1:
+                    centros_creados += 1
+            except (ValueError, SQLAlchemyError) as e:
+                errores.append(f"Error al crear/actualizar centro (índice {idx}, cod_centro: {row.get('cod_centro', 'N/A')}): {str(e)}")
+                logger.error(f"Error al crear/actualizar centro: {e}")
     
     # 3. Crear municipios
     if "cod_municipio" in df.columns and "nombre_municipio" in df.columns:
@@ -290,7 +325,7 @@ def crear_grupos_desde_df(db: Session, df):
         try:
             params = {
                 "ficha": int(row["ficha"]) if "ficha" in row and pd.notna(row["ficha"]) else None,
-                "cod_programa": int(row["cod_programa"]) if "cod_programa" in row and pd.notna(row.get("cod_programa")) else None,
+                "cod_programa": str(row["cod_programa"]) if "cod_programa" in row and pd.notna(row.get("cod_programa")) else None,
                 "cod_centro": int(row["cod_centro"]) if "cod_centro" in row and pd.notna(row.get("cod_centro")) else None,
                 "modalidad": str(row["modalidad"]) if "modalidad" in row and pd.notna(row.get("modalidad")) else None,
                 "jornada": str(row["jornada"]) if "jornada" in row and pd.notna(row.get("jornada")) else None,
@@ -321,6 +356,52 @@ def crear_grupos_desde_df(db: Session, df):
             logger.error(f"Error al crear grupo: {e}")
     
     return grupos_creados, errores
+
+
+def actualizar_grupos_desde_df(db: Session, df):
+    actualizados = 0
+    errores = []
+
+    update_sql = text("""
+        UPDATE grupos
+        SET
+            cod_programa = COALESCE(:cod_programa, cod_programa),
+            cod_centro = COALESCE(:cod_centro, cod_centro),
+            modalidad = COALESCE(:modalidad, modalidad),
+            jornada = COALESCE(:jornada, jornada),
+            estado_curso = COALESCE(:estado_curso, estado_curso),
+            fecha_inicio = COALESCE(:fecha_inicio, fecha_inicio),
+            fecha_fin = COALESCE(:fecha_fin, fecha_fin),
+            cod_municipio = COALESCE(:cod_municipio, cod_municipio),
+            cod_estrategia = COALESCE(:cod_estrategia, cod_estrategia),
+            num_aprendices_matriculados = COALESCE(:num_aprendices_matriculados, num_aprendices_matriculados)
+        WHERE ficha = :ficha
+    """)
+
+    for idx, row in df.iterrows():
+        try:
+            params = {
+                "ficha": int(row["ficha"]) if "ficha" in row and pd.notna(row["ficha"]) else None,
+                "cod_programa": str(row["cod_programa"]) if "cod_programa" in row and pd.notna(row.get("cod_programa")) else None,
+                "cod_centro": int(row["cod_centro"]) if "cod_centro" in row and pd.notna(row.get("cod_centro")) else None,
+                "modalidad": str(row["modalidad"]) if "modalidad" in row and pd.notna(row.get("modalidad")) else None,
+                "jornada": str(row["jornada"]) if "jornada" in row and pd.notna(row.get("jornada")) else None,
+                "estado_curso": str(row["estado_curso"]) if "estado_curso" in row and pd.notna(row.get("estado_curso")) else None,
+                "fecha_inicio": row.get("fecha_inicio") if "fecha_inicio" in row and pd.notna(row.get("fecha_inicio")) else None,
+                "fecha_fin": row.get("fecha_fin") if "fecha_fin" in row and pd.notna(row.get("fecha_fin")) else None,
+                "cod_municipio": str(row["cod_municipio"]) if "cod_municipio" in row and pd.notna(row.get("cod_municipio")) else None,
+                "cod_estrategia": str(row["cod_estrategia"]) if "cod_estrategia" in row and pd.notna(row.get("cod_estrategia")) else None,
+                "num_aprendices_matriculados": int(row.get("num_aprendices_matriculados", 0)) if "num_aprendices_matriculados" in row and pd.notna(row.get("num_aprendices_matriculados")) else None,
+            }
+            if params["ficha"]:
+                result = db.execute(update_sql, params)
+                if result.rowcount >= 0:
+                    actualizados += 1
+        except SQLAlchemyError as e:
+            errores.append(f"Error al actualizar grupo (índice {idx}, ficha: {row.get('ficha', 'N/A')}): {str(e)}")
+            logger.error(f"Error al actualizar grupo: {e}")
+
+    return actualizados, errores
 
 
 def insertar_actualizar_historico(db: Session, df):

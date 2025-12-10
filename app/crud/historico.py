@@ -13,34 +13,7 @@ def get_all_historicos(db: Session, skip: int = 0, limit: int = 100) -> List[dic
     try:
         query = text("""
             SELECT 
-                grupos.codigo_regional ,grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
-                grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
-                grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
-                grupos.num_aprendices_matriculados, grupos.num_aprendices_activos,
-                historico.id_historico, historico.id_grupo,
-                historico.num_aprendices_inscritos, historico.num_aprendices_en_transito,
-                historico.num_aprendices_formacion, historico.num_aprendices_induccion,
-                historico.num_aprendices_condicionados, historico.num_aprendices_aplazados,
-                historico.num_aprendices_retirado_voluntario, historico.num_aprendices_cancelados,
-                historico.num_aprendices_reprobados, historico.num_aprendices_no_aptos,
-                historico.num_aprendices_reingresados, historico.num_aprendices_por_certificar,
-                historico.num_aprendices_certificados, historico.num_aprendices_trasladados
-            FROM historico
-            INNER JOIN grupos ON historico.id_grupo = grupos.ficha
-            LIMIT :limit OFFSET :skip
-        """)
-
-        result = db.execute(query, {"limit": limit, "skip": skip}).mappings().all()
-        return result
-
-    except SQLAlchemyError as e:
-        logger.error(f"Error al obtener historicos: {e}")
-        raise Exception("Error de base de datos al obtener los historicos")
-
-def get_historico_by_id(db: Session, id_historico: int):
-    try:
-        query = text("""
-            SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -55,6 +28,37 @@ def get_historico_by_id(db: Session, id_historico: int):
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM historico
             INNER JOIN grupos ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
+            LIMIT :limit OFFSET :skip
+        """)
+
+        result = db.execute(query, {"limit": limit, "skip": skip}).mappings().all()
+        return result
+
+    except SQLAlchemyError as e:
+        logger.error(f"Error al obtener historicos: {e}")
+        raise Exception("Error de base de datos al obtener los historicos")
+
+def get_historico_by_id(db: Session, id_historico: int):
+    try:
+        query = text("""
+            SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
+                grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
+                grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
+                grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
+                grupos.num_aprendices_matriculados, grupos.num_aprendices_activos,
+                historico.id_historico, historico.id_grupo,
+                historico.num_aprendices_inscritos, historico.num_aprendices_en_transito,
+                historico.num_aprendices_formacion, historico.num_aprendices_induccion,
+                historico.num_aprendices_condicionados, historico.num_aprendices_aplazados,
+                historico.num_aprendices_retirado_voluntario, historico.num_aprendices_cancelados,
+                historico.num_aprendices_reprobados, historico.num_aprendices_no_aptos,
+                historico.num_aprendices_reingresados, historico.num_aprendices_por_certificar,
+                historico.num_aprendices_certificados, historico.num_aprendices_trasladados
+            FROM historico
+            INNER JOIN grupos ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.id_historico = :id_historico
         """)
 
@@ -72,6 +76,7 @@ def get_historicos_by_grupo(db: Session, id_grupo: int) -> List[dict]:
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -86,6 +91,7 @@ def get_historicos_by_grupo(db: Session, id_grupo: int) -> List[dict]:
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM historico
             INNER JOIN grupos ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.id_grupo = :id_grupo
         """)
 
@@ -105,6 +111,7 @@ def get_historico_by_ficha(db: Session, ficha: int) -> Optional[dict]:
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -119,6 +126,7 @@ def get_historico_by_ficha(db: Session, ficha: int) -> Optional[dict]:
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM historico
             INNER JOIN grupos ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.id_grupo = :ficha
         """)
 
@@ -138,6 +146,7 @@ def get_historico_by_cod_programa(db: Session, cod_programa: str) -> Optional[di
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -152,6 +161,7 @@ def get_historico_by_cod_programa(db: Session, cod_programa: str) -> Optional[di
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM historico
             INNER JOIN grupos ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE grupos.cod_programa = :cod_programa
         """)
 
@@ -170,6 +180,7 @@ def get_historico_by_cod_centro(db: Session, cod_centro: int) -> Optional[dict]:
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -184,6 +195,7 @@ def get_historico_by_cod_centro(db: Session, cod_centro: int) -> Optional[dict]:
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE grupos.cod_centro = :cod_centro        
         """)
         
@@ -202,6 +214,7 @@ def get_historico_by_jornada(db: Session, jornada: str) -> Optional[dict]:
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -216,6 +229,7 @@ def get_historico_by_jornada(db: Session, jornada: str) -> Optional[dict]:
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE grupos.jornada = :jornada           
         """)
         
@@ -236,6 +250,7 @@ def get_historico_by_estado_curso(db: Session, estado_curso: str) -> Optional[di
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -250,6 +265,7 @@ def get_historico_by_estado_curso(db: Session, estado_curso: str) -> Optional[di
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE grupos.estado_curso = :estado_curso        
         """)
         
@@ -269,6 +285,7 @@ def get_historico_by_fecha_inicio(db: Session, fecha_inicio: date) -> Optional[d
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -283,6 +300,7 @@ def get_historico_by_fecha_inicio(db: Session, fecha_inicio: date) -> Optional[d
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE grupos.fecha_inicio = :fecha_inicio        
         """)
         
@@ -301,6 +319,7 @@ def get_historico_by_fecha_fin(db: Session, fecha_fin: date) -> Optional[dict]:
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -315,6 +334,7 @@ def get_historico_by_fecha_fin(db: Session, fecha_fin: date) -> Optional[dict]:
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE grupos.fecha_fin = :fecha_fin        
         """)
         
@@ -334,6 +354,7 @@ def get_historico_by_cod_municipio(db: Session, cod_municipio: str) -> Optional[
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -348,6 +369,7 @@ def get_historico_by_cod_municipio(db: Session, cod_municipio: str) -> Optional[
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE grupos.cod_municipio = :cod_municipio        
         """)
         
@@ -367,6 +389,7 @@ def get_historico_by_num_aprendices_inscritos(db: Session, num_aprendices_inscri
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -381,6 +404,7 @@ def get_historico_by_num_aprendices_inscritos(db: Session, num_aprendices_inscri
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_inscritos = :num_aprendices_inscritos        
         """)
         
@@ -400,6 +424,7 @@ def get_historico_by_num_aprendices_en_transito(db: Session, num_aprendices_en_t
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -414,6 +439,7 @@ def get_historico_by_num_aprendices_en_transito(db: Session, num_aprendices_en_t
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_en_transito = :num_aprendices_en_transito        
         """)
         
@@ -433,6 +459,7 @@ def get_historico_by_num_aprendices_formacion(db: Session, num_aprendices_formac
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -447,6 +474,7 @@ def get_historico_by_num_aprendices_formacion(db: Session, num_aprendices_formac
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_formacion = :num_aprendices_formacion        
         """)
         
@@ -466,6 +494,7 @@ def get_historico_by_num_aprendices_induccion(db: Session, num_aprendices_inducc
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -480,6 +509,7 @@ def get_historico_by_num_aprendices_induccion(db: Session, num_aprendices_inducc
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_induccion = :num_aprendices_induccion        
         """)
         
@@ -499,6 +529,7 @@ def get_historico_by_num_aprendices_condicionados(db: Session, num_aprendices_co
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -513,6 +544,7 @@ def get_historico_by_num_aprendices_condicionados(db: Session, num_aprendices_co
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_condicionados = :num_aprendices_condicionados        
         """)
         
@@ -532,6 +564,7 @@ def get_historico_by_num_aprendices_aplazados(db: Session, num_aprendices_aplaza
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -546,6 +579,7 @@ def get_historico_by_num_aprendices_aplazados(db: Session, num_aprendices_aplaza
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_aplazados = :num_aprendices_aplazados        
         """)
         
@@ -565,6 +599,7 @@ def get_historico_by_num_aprendices_retirado_voluntario(db: Session, num_aprendi
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -579,6 +614,7 @@ def get_historico_by_num_aprendices_retirado_voluntario(db: Session, num_aprendi
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_retirado_voluntario = :num_aprendices_retirado_voluntario        
         """)
         
@@ -598,6 +634,7 @@ def get_historico_by_num_aprendices_cancelados(db: Session, num_aprendices_cance
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -612,6 +649,7 @@ def get_historico_by_num_aprendices_cancelados(db: Session, num_aprendices_cance
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_cancelados = :num_aprendices_cancelados        
         """)
         
@@ -631,6 +669,7 @@ def get_historico_by_num_aprendices_reprobados(db: Session, num_aprendices_repro
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -645,6 +684,7 @@ def get_historico_by_num_aprendices_reprobados(db: Session, num_aprendices_repro
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_reprobados = :num_aprendices_reprobados        
         """)
         
@@ -664,6 +704,7 @@ def get_historico_by_num_aprendices_no_aptos(db: Session, num_aprendices_no_apto
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -678,6 +719,7 @@ def get_historico_by_num_aprendices_no_aptos(db: Session, num_aprendices_no_apto
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_no_aptos = :num_aprendices_no_aptos        
         """)
         
@@ -696,6 +738,7 @@ def get_historico_by_num_aprendices_reingresados(db: Session, num_aprendices_rei
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -710,6 +753,7 @@ def get_historico_by_num_aprendices_reingresados(db: Session, num_aprendices_rei
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_reingresados = :num_aprendices_reingresados       
         """)
         
@@ -729,6 +773,7 @@ def get_historico_by_num_aprendices_por_certificar(db: Session, num_aprendices_p
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -743,6 +788,7 @@ def get_historico_by_num_aprendices_por_certificar(db: Session, num_aprendices_p
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_por_certificar = :num_aprendices_por_certificar        
         """)
         
@@ -762,6 +808,7 @@ def get_historico_by_num_aprendices_certificados(db: Session, num_aprendices_cer
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -776,6 +823,7 @@ def get_historico_by_num_aprendices_certificados(db: Session, num_aprendices_cer
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_certificados = :num_aprendices_certificados        
         """)
         
@@ -795,6 +843,7 @@ def get_historico_by_num_aprendices_trasladados(db: Session, num_aprendices_tras
     try:
         query = text("""
             SELECT 
+                centros_formacion.cod_regional, centros_formacion.nombre_regional ,
                 grupos.ficha, grupos.cod_programa, grupos.cod_centro, grupos.modalidad,
                 grupos.jornada, grupos.etapa_ficha, grupos.estado_curso, grupos.fecha_inicio,
                 grupos.fecha_fin, grupos.cod_municipio, grupos.cod_estrategia, grupos.cupo_asignado,
@@ -809,6 +858,7 @@ def get_historico_by_num_aprendices_trasladados(db: Session, num_aprendices_tras
                 historico.num_aprendices_certificados, historico.num_aprendices_trasladados
             FROM grupos
             INNER JOIN historico ON historico.id_grupo = grupos.ficha
+            INNER JOIN centros_formacion ON grupos.cod_centro = centros_formacion.cod_centro
             WHERE historico.num_aprendices_trasladados = :num_aprendices_trasladados        
         """)
         
