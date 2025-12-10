@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/obtener-todos", status_code=status.HTTP_200_OK)
 def get_all(
     skip: int = 0, 
-    limit: int = 100, 
+    limit: int = 5000, 
     db: Session = Depends(get_db),
     user_token: RetornoUsuario = Depends(get_current_user)
 ):
