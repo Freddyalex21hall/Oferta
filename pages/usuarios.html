@@ -1,0 +1,137 @@
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card w-100">
+            <div class="card-body">
+            <div class="d-md-flex align-itemr">
+                <div>
+                <h4 class="card-title">Usuario</h4>
+                <p class="card-subtitle">
+                    Este un subtitulo del modulo
+                </p>
+                </div>
+                <div class="ms-auto">
+                    <form class="d-flex" role="search">
+                        <input class="form-control me-2" type="search" placeholder="Buscar por email" aria-label="Search"/>
+                        <button id="btnBuscarEmail" class="btn btn-outline-success" type="submit"><i class="bi bi-search"></i></button>
+                    </form>
+                </div>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#crear_usuario">
+                        Agregar Usuario
+                    </button>
+                </div>
+            </div>
+            <div id="sales-overview" class="mt-4 mx-n6">
+                <div class="table-responsive mt-4">
+                        <table class="table mb-0 text-nowrap varient-table align-middle fs-3">
+                        <thead>
+                            <tr>
+                            <th scope="col" class="px-0 text-muted">
+                                Usuario
+                            </th>
+                            <th scope="col" class="px-0 text-muted">
+                                Rol
+                            </th>
+                            <th scope="col" class="px-0 text-muted">
+                                Correo
+                            </th>
+                            <th scope="col" class="px-0 text-muted text-end">
+                                Estado
+                            </th>
+                            <th scope="col" class="px-0 text-muted text-end">
+                                Acciones
+                            </th>
+                            </tr>
+                        </thead>
+                <tbody id="users-container">
+                </tbody>
+            </div>
+            </div>
+        </div>
+    </div>  
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="crear_usuario" tabindex="-1" aria-labelledby="crearUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h1 class="modal-title fs-5" id="crearUsuarioLabel">Agregar Usuario</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form action="#" id="formSaveUser">
+                <div class="mb-3">
+                    <label for="inputNombre" class="form-label">Nombre Completo</label>
+                    <input type="text" class="form-control" id="inputNombre" aria-describedby="emailHelp">
+                </div>
+                <div class="mb-3">
+                    <label for="inputRol" class="form-label">Rol Usuario</label>
+                    <input type="number" class="form-control" id="inputRol">
+                </div>
+                <div class="mb-3">
+                    <label for="inputCorreo" class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="inputCorreo">
+                </div>
+                <div class="mb-3">
+                    <label for="inputDocumento" class="form-label">Documento</label>
+                    <input type="number" class="form-control" id="inputDocumento">
+                </div>
+                <div class="mb-3">
+                    <label for="inputPassword" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="inputPassword">
+                </div>
+                <div class="mb-3">
+                    <label for="inputConfirmPassword" class="form-label">Confirmar Contraseña</label>
+                    <input type="password" class="form-control" id="inputConfirmPassword">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button id="btnGuardarUsuario" type="submit" class="btn btn-primary">Guardar Usuario</button>
+        </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h1 class="modal-title fs-5" id="editUserModalLabel">Editar Usuario</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form action="#" id="formEditUser">
+                <div class="mb-3">
+                    <label for="editNombre" class="form-label">Nombre Completo</label>
+                    <input type="text" class="form-control" id="editNombre" aria-describedby="emailHelp">
+                </div>
+                <div class="mb-3">
+                    <label for="editCorreo" class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="editCorreo">
+                </div>
+                <div class="mb-3">
+                    <label for="editDocumento" class="form-label">Documento</label>
+                    <input type="number" class="form-control" id="editDocumento">
+                </div>
+                <div class="mb-3">
+                    <input type="hidden" id="editIdUser" class="form-control">
+                </div>
+                <label for="editEstado" class="form-label">Estado</label>
+                <select name="" id="editEstado" class="form-select">
+                    <option value="true">Activo</option>
+                    <option value="false">Inactivo</option>
+                </select>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button id="btnEditarUsuario" type="submit" class="btn btn-primary">Guardar Usuario</button>
+        </div>
+        </div>
+    </div>
+</div>
