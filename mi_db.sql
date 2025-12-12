@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS `estado_de_normas` (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS`registro_calificado` (
+CREATE TABLE IF NOT EXISTS `registro_calificado` (
     `id` INT AUTO_INCREMENT,
     `cod_programa` VARCHAR(16) NOT NULL,
     `tipo_tramite` VARCHAR(50),
@@ -170,11 +170,10 @@ CREATE TABLE IF NOT EXISTS`registro_calificado` (
     `clasificacion` VARCHAR(15),
     `estado_catalogo` VARCHAR(50),
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_registro_calificado_programa`
-        FOREIGN KEY (`cod_programa`)
-        REFERENCES `programas_formacion`(`cod_programa`)
+    CONSTRAINT fk_registro_calificado_programa
+        FOREIGN KEY (cod_programa)
+        REFERENCES programas_formacion(cod_programa)
         ON UPDATE CASCADE
-        ON DELETE CASCADE
 );
 
 
