@@ -1,6 +1,8 @@
 ﻿# app/crud/cargar_archivos.py
 import logging
 import datetime
+import pandas as pd
+from dateutil import parser as dateutil_parser
 from typing import Any, Dict
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -47,14 +49,40 @@ def _parse_date(v: Any):
         return v.date()
     # si viene string intentar parsear formatos comunes
     if isinstance(v, str):
-        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%d.%m.%Y"):
+        s = v.strip()
+        # intento: si es sólo dígitos, puede ser número de serie de Excel
+        if s.isdigit():
             try:
-                return datetime.datetime.strptime(v, fmt).date()
+                iv = int(s)
+                # rangos plausibles para fechas Excel modernas
+                if 20000 <= iv <= 50000:
+                    try:
+                        dt = pd.to_datetime(iv, unit='D', origin='1899-12-30')
+                        return dt.date()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        # formatos comunes rápidos
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%d.%m.%Y", "%d %b %Y", "%d %B %Y"):
+            try:
+                return datetime.datetime.strptime(s, fmt).date()
             except Exception:
                 continue
-        # intento final con fromisoformat (acepta YYYY-MM-DD y variantes)
+
+        # Intentar dateutil (más flexible, acepta muchos formatos y meses en diferentes idiomas en algunos casos)
         try:
-            return datetime.date.fromisoformat(v)
+            dt = dateutil_parser.parse(s, dayfirst=True, fuzzy=True)
+            return dt.date()
+        except Exception:
+            pass
+
+        # Intentar con pandas como último recurso
+        try:
+            pdt = pd.to_datetime(s, dayfirst=True, errors='coerce', infer_datetime_format=True)
+            if not pd.isna(pdt):
+                return pdt.date()
         except Exception:
             pass
     return None
@@ -120,7 +148,7 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
 
     for idx, row in df_programas.iterrows():
         try:
-            cod_programa = _to_int_safe(row.get("cod_programa"))
+            cod_programa = _safe_val(row.get("cod_programa"))
             data = {
                 "cod_programa": cod_programa,
                 "version": _safe_val(row.get("la_version")) or _safe_val(row.get("version")),
@@ -164,7 +192,7 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
             for k, v in row.items():
                 data_row[k] = _safe_val(v)
             # enteros seguros
-            for int_col in ["cod_ficha", "cod_centro", "cod_programa"]:
+            for int_col in ["cod_ficha", "cod_centro"]:
                 if int_col in data_row:
                     data_row[int_col] = _to_int_safe(data_row[int_col])
             # fechas
@@ -241,7 +269,7 @@ def insertar_estado_normas(db: Session, df_normas):
     # Normalizar y parsear los valores esperados
     try:
         cod_programa_raw = _get(row, 'cod_programa', 'COD PROGRAMA', 'cod_programa')
-        cod_programa = _to_int_safe(_safe_val(cod_programa_raw))
+        cod_programa = _safe_val(cod_programa_raw)
 
         cod_version = _safe_val(_get(row, 'cod_version', 'CODIGO VERSION', 'cod_version'))
         fecha_elaboracion = _parse_date(_get(row, 'fecha_elaboracion', 'Fecha Elaboracion', 'FECHA ELABORACION'))
@@ -260,6 +288,11 @@ def insertar_estado_normas(db: Session, df_normas):
         tipo_competencia = _safe_val(_get(row, 'tipo_competencia', 'Tipo de competencia'))
         vigencia = _safe_val(_get(row, 'vigencia', 'Vigencia'))
         fecha_indice = _parse_date(_get(row, 'fecha_elaboracion_2', 'Fecha de Elaboración', 'fecha_elaboracion_2'))
+
+        # Si no se obtuvo `fecha_elaboracion`, intentar usar la segunda columna alternativa
+        if fecha_elaboracion is None and fecha_indice is not None:
+            fecha_elaboracion = fecha_indice
+        # Permitir NULL en fecha_elaboracion; no rechazar la fila por falta de fecha
 
         data = {
             "cod_programa": cod_programa,

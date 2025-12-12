@@ -134,10 +134,10 @@ CREATE TABLE IF NOT EXISTS `historico`(
 
 CREATE TABLE IF NOT EXISTS `estado_de_normas` (
     `id_estado_norma` MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `cod_programa` INT UNSIGNED NOT NULL,
-    `cod_version` VARCHAR(50) NOT NULL,
+    `cod_programa` VARCHAR(16) NOT NULL,
+    `cod_version` VARCHAR(50) NULL,
     `fecha_elaboracion` DATE NULL,
-    `anio` SMALLINT NOT NULL,
+    `anio` SMALLINT NULL,
     `red_conocimiento` VARCHAR(150),
     `nombre_ncl` VARCHAR(150),
     `cod_ncl` INT,
@@ -157,7 +157,8 @@ CREATE TABLE IF NOT EXISTS `estado_de_normas` (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `registro_calificado` (
+CREATE TABLE IF NOT EXISTS`registro_calificado` (
+    `id` INT AUTO_INCREMENT,
     `cod_programa` VARCHAR(16) NOT NULL,
     `tipo_tramite` VARCHAR(50),
     `fecha_radicado` DATE,
@@ -168,10 +169,12 @@ CREATE TABLE IF NOT EXISTS `registro_calificado` (
     `modalidad` VARCHAR(25),
     `clasificacion` VARCHAR(15),
     `estado_catalogo` VARCHAR(50),
-    PRIMARY KEY (`cod_programa`),
-    FOREIGN KEY (`cod_programa`)
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_registro_calificado_programa`
+        FOREIGN KEY (`cod_programa`)
         REFERENCES `programas_formacion`(`cod_programa`)
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
+
 
