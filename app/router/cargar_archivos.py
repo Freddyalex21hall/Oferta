@@ -16,42 +16,65 @@ async def upload_estado_normas(
     # Leer archivo
     contents = await file.read()
 
+    # Leer todo el Excel sin filtrar columnas para aceptar encabezados variados
     df = pd.read_excel(
         BytesIO(contents),
         engine="openpyxl",
-        usecols=[
-            'COD PROGRAMA', 'VERSIÓN PROG', 'CODIGO VERSION', 'TIPO PROGRAMA', 'NIVEL DE FORMACIÓN', 'NOMBRE PROGRAMA', 'ESTADO PROGRAMA', 'Fecha Elaboracion', 'Año', 'RED CONOCIMIENTO', 'NOMBRE_NCL', 'NOMBRE_NCL', 'NCL CODIGO', 'NCL VERSION', 'Norma corte a NOVIEMBRE', 'Versión', 'Norma - Versión', 'Mesa Sectorial', 'Tipo de Norma', 'Observación', 'Fecha de revisión', 'Tipo de competencia', 'Vigencia', 'Fecha de Elaboración'
-        ],
         dtype=str
     )
 
 
     # ====== MAPEO HACIA LOS CAMPOS EXACTOS DEL CRUD / TABLA ======
-    df = df.rename(columns = {
+    # Mapeo basado en nombres esperados; la coincidencia es flexible (mayúsculas/minúsculas, acentos, espacios)
+    def _norm(s: str):
+        if s is None:
+            return ""
+        return (
+            s.strip()
+            .upper()
+            .replace("_", " ")
+            .replace("\u00A0", " ")
+            .replace("\n", " ")
+        )
+
+    expected = {
         "COD PROGRAMA": "cod_programa",
         "VERSIÓN PROG": "version_programa",
+        "VERSION PROG": "version_programa",
         "CODIGO VERSION": "cod_version",
         "TIPO PROGRAMA": "tipo_programa",
         "NIVEL DE FORMACIÓN": "nivel_formacion",
+        "NIVEL DE FORMACION": "nivel_formacion",
         "NOMBRE PROGRAMA": "nombre_programa",
         "ESTADO PROGRAMA": "estado_programa",
-        "Fecha Elaboracion": "fecha_elaboracion",
-        "Año": "anio",
+        "FECHA ELABORACION": "fecha_elaboracion",
+        "FECHA DE ELABORACIÓN": "fecha_elaboracion_2",
+        "FECHA DE ELABORACION": "fecha_elaboracion_2",
+        "AÑO": "anio",
+        "ANO": "anio",
         "RED CONOCIMIENTO": "red_conocimiento",
         "NOMBRE_NCL": "nombre_ncl",
+        "NOMBRE NCL": "nombre_ncl",
         "NCL CODIGO": "cod_ncl",
         "NCL VERSION": "ncl_version",
-        "Norma corte a NOVIEMBRE": "norma_corte_noviembre",
-        "Versión": "version",
-        "Norma - Versión": "norma_version",
-        "Mesa Sectorial": "mesa_sectorial",
-        "Tipo de Norma": "tipo_norma",
-        "Observación": "observacion",
-        "Fecha de revisión": "fecha_revision",
-        "Tipo de competencia": "tipo_competencia",
-        "Vigencia": "vigencia",
-        "Fecha de Elaboración": "fecha_elaboracion_2",
-    })
+        "TIPO DE COMPETENCIA": "tipo_competencia",
+        "VIGENCIA": "vigencia",
+    }
+
+    # Construir dict de renombrado mapeando columnas reales a los esperados
+    columnas_renombrar = {}
+    for col in df.columns:
+        n = _norm(str(col))
+        if n in expected:
+            columnas_renombrar[col] = expected[n]
+        else:
+            # buscar coincidencias parciales
+            for k, v in expected.items():
+                if k in n or n in k:
+                    columnas_renombrar[col] = v
+                    break
+
+    df = df.rename(columns=columnas_renombrar)
 
 
     cargados = 0
