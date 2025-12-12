@@ -135,9 +135,9 @@ CREATE TABLE IF NOT EXISTS `historico`(
 CREATE TABLE estado_de_normas (
     `id_estado_norma` MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `cod_programa` VARCHAR(16) NOT NULL,
-    `cod_version` VARCHAR(50) NOT NULL,
+    `cod_version` VARCHAR(50) NULL,
     `fecha_elaboracion` DATE NULL,
-    `anio` SMALLINT NOT NULL,
+    `anio` SMALLINT NULL,
     `red_conocimiento` VARCHAR(150),
     `nombre_ncl` VARCHAR(150),
     `cod_ncl` INT,

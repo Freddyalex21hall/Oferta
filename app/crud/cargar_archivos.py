@@ -292,15 +292,7 @@ def insertar_estado_normas(db: Session, df_normas):
         # Si no se obtuvo `fecha_elaboracion`, intentar usar la segunda columna alternativa
         if fecha_elaboracion is None and fecha_indice is not None:
             fecha_elaboracion = fecha_indice
-
-        # Si aún no hay fecha válida, reportar error y no intentar insertar (columna NOT NULL en BD)
-        if fecha_elaboracion is None:
-            errores.append({"error": "fecha_elaboracion ausente o no parseable"})
-            return {
-                "mensaje": "Carga finalizada",
-                "registros_cargados": insertados,
-                "errores": errores
-            }
+        # Permitir NULL en fecha_elaboracion; no rechazar la fila por falta de fecha
 
         data = {
             "cod_programa": cod_programa,
