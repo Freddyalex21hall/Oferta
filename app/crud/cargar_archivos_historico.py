@@ -405,79 +405,46 @@ def actualizar_grupos_desde_df(db: Session, df):
 
 
 def insertar_actualizar_historico(db: Session, df):
-    """Inserta o actualiza registros históricos. Descarta los que no cambian."""
     registros_insertados = 0
     registros_actualizados = 0
     registros_descartados = 0
     errores = []
 
-    campos_update = ", ".join([f"{col} = :{col}" for col in HISTORICO_COLUMNAS])
+    columnas = ["id_grupo"] + HISTORICO_COLUMNAS
+    update_clause = ", ".join([f"{c} = VALUES({c})" for c in HISTORICO_COLUMNAS])
+    chunk_size = 1000
 
-    insert_historico_sql = text(f"""
-        INSERT INTO historico (
-            id_grupo,
-            {", ".join(HISTORICO_COLUMNAS)}
-        ) VALUES (
-            :id_grupo,
-            {", ".join([f":{col}" for col in HISTORICO_COLUMNAS])}
-        )
-    """)
-
-    update_historico_sql = text(f"""
-        UPDATE historico
-        SET {campos_update}
-        WHERE id_grupo = :id_grupo
-    """)
-
-    select_historico_sql = text(f"""
-        SELECT id_grupo,
-            {", ".join(HISTORICO_COLUMNAS)}
-        FROM historico
-        WHERE id_grupo = :id_grupo
-        LIMIT 1
-    """)
-
-    for idx, row in df.iterrows():
-        try:
-            if "id_grupo" not in row or pd.isna(row["id_grupo"]):
-                errores.append(f"Error: id_grupo requerido en índice {idx}")
+    try:
+        total_afectadas = 0
+        for start in range(0, len(df), chunk_size):
+            batch = df.iloc[start:start+chunk_size]
+            values_parts = []
+            params = {}
+            for i, row in batch.iterrows():
+                idx = str(i)
+                placeholders = []
+                val_id = int(row["id_grupo"]) if "id_grupo" in row and pd.notna(row["id_grupo"]) else None
+                params[f"id_grupo_{idx}"] = val_id
+                placeholders.append(f":id_grupo_{idx}")
+                for col in HISTORICO_COLUMNAS:
+                    v = row.get(col, 0)
+                    val = int(v) if pd.notna(v) else 0
+                    params[f"{col}_{idx}"] = val
+                    placeholders.append(f":{col}_{idx}")
+                values_parts.append(f"({', '.join(placeholders)})")
+            if not values_parts:
                 continue
-
-            params = {
-                "id_grupo": int(row["id_grupo"]),
-                "num_aprendices_inscritos": int(row.get("num_aprendices_inscritos", 0)) if "num_aprendices_inscritos" in row and pd.notna(row.get("num_aprendices_inscritos")) else 0,
-                "num_aprendices_en_transito": int(row.get("num_aprendices_en_transito", 0)) if "num_aprendices_en_transito" in row and pd.notna(row.get("num_aprendices_en_transito")) else 0,
-                "num_aprendices_formacion": int(row.get("num_aprendices_formacion", 0)) if "num_aprendices_formacion" in row and pd.notna(row.get("num_aprendices_formacion")) else 0,
-                "num_aprendices_induccion": int(row.get("num_aprendices_induccion", 0)) if "num_aprendices_induccion" in row and pd.notna(row.get("num_aprendices_induccion")) else 0,
-                "num_aprendices_condicionados": int(row.get("num_aprendices_condicionados", 0)) if "num_aprendices_condicionados" in row and pd.notna(row.get("num_aprendices_condicionados")) else 0,
-                "num_aprendices_aplazados": int(row.get("num_aprendices_aplazados", 0)) if "num_aprendices_aplazados" in row and pd.notna(row.get("num_aprendices_aplazados")) else 0,
-                "num_aprendices_retirado_voluntario": int(row.get("num_aprendices_retirado_voluntario", 0)) if "num_aprendices_retirado_voluntario" in row and pd.notna(row.get("num_aprendices_retirado_voluntario")) else 0,
-                "num_aprendices_cancelados": int(row.get("num_aprendices_cancelados", 0)) if "num_aprendices_cancelados" in row and pd.notna(row.get("num_aprendices_cancelados")) else 0,
-                "num_aprendices_reprobados": int(row.get("num_aprendices_reprobados", 0)) if "num_aprendices_reprobados" in row and pd.notna(row.get("num_aprendices_reprobados")) else 0,
-                "num_aprendices_no_aptos": int(row.get("num_aprendices_no_aptos", 0)) if "num_aprendices_no_aptos" in row and pd.notna(row.get("num_aprendices_no_aptos")) else 0,
-                "num_aprendices_reingresados": int(row.get("num_aprendices_reingresados", 0)) if "num_aprendices_reingresados" in row and pd.notna(row.get("num_aprendices_reingresados")) else 0,
-                "num_aprendices_por_certificar": int(row.get("num_aprendices_por_certificar", 0)) if "num_aprendices_por_certificar" in row and pd.notna(row.get("num_aprendices_por_certificar")) else 0,
-                "num_aprendices_certificados": int(row.get("num_aprendices_certificados", 0)) if "num_aprendices_certificados" in row and pd.notna(row.get("num_aprendices_certificados")) else 0,
-                "num_aprendices_trasladados": int(row.get("num_aprendices_trasladados", 0)) if "num_aprendices_trasladados" in row and pd.notna(row.get("num_aprendices_trasladados")) else 0
-            }
-
-            existente = db.execute(select_historico_sql, {"id_grupo": params["id_grupo"]}).mappings().first()
-
-            if not existente:
-                db.execute(insert_historico_sql, params)
-                registros_insertados += 1
-                continue
-
-            if all(existente.get(col) == params[col] for col in HISTORICO_COLUMNAS):
-                registros_descartados += 1
-                continue
-
-            db.execute(update_historico_sql, params)
-            registros_actualizados += 1
-
-        except SQLAlchemyError as e:
-            errores.append(f"Error al insertar/actualizar histórico (índice {idx}, id_grupo: {row.get('id_grupo', 'N/A')}): {str(e)}")
-            logger.error(f"Error al insertar histórico: {e}")
+            stmt = text(f"""
+                INSERT INTO historico ({', '.join(columnas)})
+                VALUES {', '.join(values_parts)}
+                ON DUPLICATE KEY UPDATE {update_clause}
+            """)
+            result = db.execute(stmt, params)
+            total_afectadas += result.rowcount or 0
+        registros_actualizados = total_afectadas
+    except SQLAlchemyError as e:
+        errores.append(f"Error en carga masiva de histórico: {str(e)}")
+        logger.error(f"Error en carga masiva de histórico: {e}")
 
     return registros_insertados, registros_actualizados, registros_descartados, errores
 

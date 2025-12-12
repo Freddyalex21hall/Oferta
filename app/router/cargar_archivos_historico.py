@@ -164,10 +164,7 @@ async def upload_excel_historico(
             "mensaje": "El archivo Excel está vacío o no tiene datos válidos"
         }
     
-    print("DataFrame original:")
-    print(df.head())
-    print("Columnas disponibles:", df.columns.tolist())
-    print(df.dtypes)
+    logger.debug("Excel leído y columnas iniciales normalizadas")
     
     # Mapeo exacto de las 36 columnas del Excel según el orden mostrado
     columnas_mapeo = {
@@ -383,9 +380,7 @@ async def upload_excel_historico(
             df = df.rename(columns={ficha_col: "ficha"})
             print(f"Columna FICHA encontrada y renombrada desde: {ficha_col}")
 
-    print("\nDataFrame renombrado:")
-    print(df.head())
-    print("Columnas después de renombrar:", df.columns.tolist())
+    logger.debug("Columnas mapeadas y renombradas")
 
     if "ficha" not in df.columns:
         return {
@@ -477,9 +472,7 @@ async def upload_excel_historico(
             # Usar Int64 nullable para preservar valores exactos y permitir NaN
             df[col] = df[col].fillna(0).astype("Int64")
 
-    print("\nDataFrame procesado:")
-    print(df.head())
-    print("Columnas finales:", df.columns.tolist())
+    logger.debug("DataFrame procesado para inserción")
 
     # Eliminar registros duplicados para evitar reprocesar la misma información
     df, registros_duplicados = _eliminar_duplicados_historico(df)
@@ -526,7 +519,7 @@ async def upload_excel_historico(
             }
         
         df = df_filtrado
-        print(f"\nFiltro de regional aplicado: {registros_omitidos} registros omitidos, {registros_filtrados} registros válidos")
+        logger.info(f"Filtro de regional aplicado: omitidos={registros_omitidos}, válidos={registros_filtrados}")
     else:
         logger.warning("No se encontraron las columnas cod_regional o nombre_regional en el DataFrame. No se aplicó filtro de regional.")
 

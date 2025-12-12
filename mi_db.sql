@@ -3,12 +3,12 @@ CREATE DATABASE railway CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE railway;
 
-CREATE TABLE rol(
+CREATE TABLE IF NOT EXISTS `rol` (
     `id_rol` SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `nombre_rol` VARCHAR(20)
 );
 
-CREATE TABLE usuario(
+CREATE TABLE IF NOT EXISTS `usuario` (
     `id_usuario` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `nombre_completo` VARCHAR(80),
     `num_documento` CHAR(12),
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `estrategia` (
 	PRIMARY KEY(`cod_estrategia`)
 );
 
-CREATE TABLE programas_formacion (
+CREATE TABLE IF NOT EXISTS `programas_formacion` (
     `cod_programa` VARCHAR(16) PRIMARY KEY,        -- PRF_CODIGO
     `cod_version` VARCHAR(20),                    -- cod_VERSION
     `PRF_version` TINYINT UNSIGNED,                    -- PRF_VERSION
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS `historico`(
     FOREIGN KEY (`id_grupo`) REFERENCES `grupos`(`ficha`)
 );
 
-CREATE TABLE estado_de_normas (
+CREATE TABLE IF NOT EXISTS `estado_de_normas` (
     `id_estado_norma` MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `cod_programa` VARCHAR(16) NOT NULL,
     `cod_version` VARCHAR(50) NULL,
@@ -151,13 +151,11 @@ CREATE TABLE estado_de_normas (
     `fecha_revision` DATE,
     `tipo_competencia` VARCHAR(80),
     `vigencia` VARCHAR(80),
-    `fecha_indice` VARCHAR(80),
-    CONSTRAINT fk_programa_norma FOREIGN KEY (`cod_programa`)
-        REFERENCES `programas_formacion`(`cod_programa`)
-        ON DELETE CASCADE
+    `fecha_indice` VARCHAR(80)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- FK `fk_programa_norma` intentionally removed to allow inserting estado_de_normas
 
-CREATE TABLE IF NOT EXISTS`registro_calificado` (
+CREATE TABLE IF NOT EXISTS `registro_calificado` (
     `id` INT AUTO_INCREMENT,
     `cod_programa` VARCHAR(16) NOT NULL,
     `tipo_tramite` VARCHAR(50),
@@ -170,11 +168,10 @@ CREATE TABLE IF NOT EXISTS`registro_calificado` (
     `clasificacion` VARCHAR(15),
     `estado_catalogo` VARCHAR(50),
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_registro_calificado_programa`
-        FOREIGN KEY (`cod_programa`)
-        REFERENCES `programas_formacion`(`cod_programa`)
+    CONSTRAINT fk_registro_calificado_programa
+        FOREIGN KEY (cod_programa)
+        REFERENCES programas_formacion(cod_programa)
         ON UPDATE CASCADE
-        ON DELETE CASCADE
 );
 
 

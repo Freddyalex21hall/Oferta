@@ -321,6 +321,23 @@ def insertar_estado_normas(db: Session, df_normas):
             if data.get("nombre_ncl") and isinstance(data.get("nombre_ncl"), str):
                 data["nombre_ncl"] = data["nombre_ncl"][:150]
 
+            # Asegurar que exista el programa en `programas_formacion` para no violar la FK
+            cp = data.get("cod_programa")
+            if cp is not None:
+                try:
+                    placeholder_sql_pre = text("""
+                        INSERT IGNORE INTO programas_formacion (cod_programa, nombre_programa, estado)
+                        VALUES (:cod_programa, :nombre_programa, :estado)
+                    """)
+                    php = {
+                        "cod_programa": str(cp),
+                        "nombre_programa": f"AUTO-CREATED {cp}",
+                        "estado": True
+                    }
+                    db.execute(placeholder_sql_pre, php)
+                except Exception as e_ph_pre:
+                    logger.warning(f"No se pudo crear placeholder previo para programa {cp}: {e_ph_pre}")
+
             db.execute(insert_sql, data)
             insertados += 1
         except IntegrityError as ie:
@@ -328,6 +345,11 @@ def insertar_estado_normas(db: Session, df_normas):
             errstr = str(ie.__dict__.get('orig') or ie)
             logger.warning(f"IntegrityError al insertar norma: {errstr}; intentando crear placeholder de programa")
             try:
+                # Tras un IntegrityError la transacción puede quedar en estado erróneo; hacer rollback antes.
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
                 # Preparar código de programa como string
                 cp = data.get("cod_programa")
                 if cp is None:
