@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(_name_)
 logging.getLogger("sqlalchemy").setLevel(logging.INFO)
 
 # límites para MEDIUMINT UNSIGNED
@@ -134,33 +134,57 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
     grupos_actualizados = 0
     errores = []
 
+    # insertar en estado_de_normas.
     insert_programa_sql = text("""
-        INSERT INTO programas_formacion (
-            cod_programa, version, nombre, red_conocimiento
+        INSERT INTO estado_de_normas (
+            cod_programa, cod_version, fecha_elaboracion, anio, red_conocimiento,
+            nombre_ncl, cod_ncl, ncl_version, norma_corte_noviembre,
+            version, norma_version, mesa_sectorial, tipo_norma,
+            observacion, fecha_revision, tipo_competencia, vigencia, fecha_indice
         ) VALUES (
-            :cod_programa, :version, :nombre, :red_conocimiento
+            :cod_programa, :cod_version, :fecha_elaboracion, :anio, :red_conocimiento,
+            :nombre_ncl, :cod_ncl, :ncl_version, :norma_corte_noviembre,
+            :version, :norma_version, :mesa_sectorial, :tipo_norma,
+            :observacion, :fecha_revision, :tipo_competencia, :vigencia, :fecha_indice
         )
-        ON DUPLICATE KEY UPDATE
-            version = VALUES(version),
-            nombre = VALUES(nombre)
     """)
 
 
     for idx, row in df_programas.iterrows():
         try:
-            cod_programa = _safe_val(row.get("cod_programa"))
+            # Mapear columnas comunes hacia los campos de estado_de_normas
+            cod_programa = _safe_val(row.get("cod_programa") or row.get("COD PROGRAMA"))
+
             data = {
                 "cod_programa": cod_programa,
+                "cod_version": _safe_val(row.get("cod_version") or row.get("CODIGO VERSION") or row.get("cod_version")),
+                "fecha_elaboracion": _parse_date(row.get("fecha_elaboracion") or row.get("Fecha Elaboracion") or row.get("fecha_elaboracion_2")),
+                "anio": _to_int_safe(_safe_val(row.get("anio") or row.get("AÑO") or row.get("ANO"))),
+                "red_conocimiento": _safe_val(row.get("red_conocimiento")) if "red_conocimiento" in row.index else _safe_val(row.get("RED CONOCIMIENTO")),
+                "nombre_ncl": _safe_val(row.get("nombre_ncl") or row.get("NOMBRE_NCL") or row.get("NOMBRE NCL")),
+                "cod_ncl": _to_int_safe(_safe_val(row.get("cod_ncl") or row.get("NCL CODIGO") or row.get("NCL_CODIGO"))),
+                "ncl_version": _to_int_safe(_safe_val(row.get("ncl_version") or row.get("NCL VERSION") or row.get("NCL_VERSION"))),
+                "norma_corte_noviembre": _safe_val(row.get("norma_corte_noviembre")),
                 "version": _safe_val(row.get("la_version")) or _safe_val(row.get("version")),
-                "nombre": _safe_val(row.get("nombre")),
-                "red_conocimiento": _safe_val(row.get("red_conocimiento")) if "red_conocimiento" in row.index else None,
+                "norma_version": _safe_val(row.get("norma_version") or row.get("NORMA - VERSION")),
+                "mesa_sectorial": _safe_val(row.get("mesa_sectorial") or row.get("Mesa Sectorial")),
+                "tipo_norma": _safe_val(row.get("tipo_norma") or row.get("Tipo de Norma")),
+                "observacion": _safe_val(row.get("observacion") or row.get("Observación") or row.get("OBSERVACION")),
+                "fecha_revision": _parse_date(row.get("fecha_revision") or row.get("Fecha de revisión") or row.get("FECHA DE REVISION")),
+                "tipo_competencia": _safe_val(row.get("tipo_competencia") or row.get("Tipo de competencia")),
+                "vigencia": _safe_val(row.get("vigencia")),
+                "fecha_indice": _parse_date(row.get("fecha_indice") or row.get("fecha_elaboracion_2") or row.get("Fecha de Elaboración"))
             }
+
+            # Truncar campos que puedan exceder el tamaño de la columna
+            if data.get("nombre_ncl") and isinstance(data.get("nombre_ncl"), str):
+                data["nombre_ncl"] = data["nombre_ncl"][:150]
+
             db.execute(insert_programa_sql, data)
-            # No confiar en rowcount de forma estricta para inserts con ON DUPLICATE
             programas_insertados += 1
         except SQLAlchemyError as e:
             db.rollback()
-            msg = f"Error al insertar/actualizar programa (índice {idx}): {e}"
+            msg = f"Error al insertar norma (índice {idx}): {e}"
             errores.append(msg)
             logger.exception(msg)
 
@@ -289,7 +313,7 @@ def insertar_estado_normas(db: Session, df_normas):
         vigencia = _safe_val(_get(row, 'vigencia', 'Vigencia'))
         fecha_indice = _parse_date(_get(row, 'fecha_elaboracion_2', 'Fecha de Elaboración', 'fecha_elaboracion_2'))
 
-        # Si no se obtuvo `fecha_elaboracion`, intentar usar la segunda columna alternativa
+        # Si no se obtuvo fecha_elaboracion, intentar usar la segunda columna alternativa
         if fecha_elaboracion is None and fecha_indice is not None:
             fecha_elaboracion = fecha_indice
         # Permitir NULL en fecha_elaboracion; no rechazar la fila por falta de fecha
@@ -321,7 +345,7 @@ def insertar_estado_normas(db: Session, df_normas):
             if data.get("nombre_ncl") and isinstance(data.get("nombre_ncl"), str):
                 data["nombre_ncl"] = data["nombre_ncl"][:150]
 
-            # Asegurar que exista el programa en `programas_formacion` para no violar la FK
+            # Asegurar que exista el programa en programas_formacion para no violar la FK
             cp = data.get("cod_programa")
             if cp is not None:
                 try:
@@ -342,7 +366,7 @@ def insertar_estado_normas(db: Session, df_normas):
             insertados += 1
         except IntegrityError as ie:
             # IntegrityError, intentar crear placeholder en programas_formacion si es FK faltante
-            errstr = str(ie.__dict__.get('orig') or ie)
+            errstr = str(ie._dict_.get('orig') or ie)
             logger.warning(f"IntegrityError al insertar norma: {errstr}; intentando crear placeholder de programa")
             try:
                 # Tras un IntegrityError la transacción puede quedar en estado erróneo; hacer rollback antes.
@@ -376,7 +400,7 @@ def insertar_estado_normas(db: Session, df_normas):
                     insertados += 1
                 except SQLAlchemyError as e2:
                     db.rollback()
-                    err2 = str(e2.__dict__.get('orig') or e2)
+                    err2 = str(e2._dict_.get('orig') or e2)
                     errores.append({"error": err2})
                     logger.exception(f"Error insertando norma tras crear placeholder: {err2}")
             except Exception as e_ph:
@@ -386,7 +410,7 @@ def insertar_estado_normas(db: Session, df_normas):
                 logger.exception(f"No se pudo crear placeholder para programa: {errph}")
         except SQLAlchemyError as e:
             db.rollback()
-            errstr = str(e.__dict__.get('orig') or e)
+            errstr = str(e._dict_.get('orig') or e)
             errores.append({"error": errstr})
             logger.exception(f"Error insertando norma en fila: {errstr}")
 
@@ -410,4 +434,3 @@ def insertar_estado_normas(db: Session, df_normas):
         "registros_cargados": insertados,
         "errores": errores
     }
-
