@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(_name_)
+logger = logging.getLogger(__name__)
 logging.getLogger("sqlalchemy").setLevel(logging.INFO)
 # límites para MEDIUMINT UNSIGNED
 MEDIUMINT_UNSIGNED_MAX = 16777215
