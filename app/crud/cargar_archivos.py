@@ -138,11 +138,11 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
         INSERT INTO estado_de_normas (
             cod_programa, cod_version, fecha_elaboracion, anio, red_conocimiento,
             nombre_ncl, cod_ncl, ncl_version,
-            tipo_competencia, vigencia, fecha_indice
+            observacion, tipo_competencia, vigencia, fecha_indice
         ) VALUES (
             :cod_programa, :cod_version, :fecha_elaboracion, :anio, :red_conocimiento,
             :nombre_ncl, :cod_ncl, :ncl_version,
-            :tipo_competencia, :vigencia, :fecha_indice
+            :observacion, :tipo_competencia, :vigencia, :fecha_indice
         )
     """)
 
@@ -161,6 +161,7 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
                 "nombre_ncl": _safe_val(row.get("nombre_ncl") or row.get("NOMBRE_NCL") or row.get("NOMBRE NCL")),
                 "cod_ncl": _to_int_safe(_safe_val(row.get("cod_ncl") or row.get("NCL CODIGO") or row.get("NCL_CODIGO"))),
                 "ncl_version": _to_int_safe(_safe_val(row.get("ncl_version") or row.get("NCL VERSION") or row.get("NCL_VERSION"))),
+                "observacion": _safe_val(row.get("observacion") or row.get("Observación") or row.get("OBSERVACION")),
                 "tipo_competencia": _safe_val(row.get("tipo_competencia") or row.get("Tipo de competencia")),
                 "vigencia": _safe_val(row.get("vigencia")),
                 "fecha_indice": _parse_date(row.get("fecha_indice") or row.get("fecha_elaboracion_2") or row.get("Fecha de Elaboración"))
@@ -290,6 +291,7 @@ def insertar_estado_normas(db: Session, df_normas):
         nombre_ncl = _safe_val(_get(row, 'nombre_ncl', 'NOMBRE_NCL', 'NOMBRE NCL'))
         cod_ncl = _to_int_safe(_safe_val(_get(row, 'cod_ncl', 'NCL CODIGO', 'NCL_CODIGO')))
         ncl_version = _to_int_safe(_safe_val(_get(row, 'ncl_version', 'NCL VERSION', 'NCL_VERSION')))
+        observacion = _safe_val(_get(row, 'observacion', 'Observación', 'OBSERVACION'))
         tipo_competencia = _safe_val(_get(row, 'tipo_competencia', 'Tipo de competencia'))
         vigencia = _safe_val(_get(row, 'vigencia', 'Vigencia'))
         fecha_indice = _parse_date(_get(row, 'fecha_elaboracion_2', 'Fecha de Elaboración', 'fecha_elaboracion_2'))
@@ -308,6 +310,7 @@ def insertar_estado_normas(db: Session, df_normas):
             "nombre_ncl": nombre_ncl,
             "cod_ncl": cod_ncl,
             "ncl_version": ncl_version,
+            "observacion": observacion,
             "tipo_competencia": tipo_competencia,
             "vigencia": vigencia,
             "fecha_indice": fecha_indice,
