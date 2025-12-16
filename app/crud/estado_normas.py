@@ -37,12 +37,18 @@ def crear_estado_norma(db: Session, data: dict):
 
 #   LISTAR
 
-def listar_estado_normas(db: Session):
+def listar_estado_normas(db: Session, skip: int = 0, limit: int = 5000):
     try:
-        query = text("SELECT * FROM estado_de_normas ORDER BY id_estado_norma ASC")
-        return db.execute(query).mappings().all()
+        logger.info(f"Ejecutando listar_estado_normas con skip={skip}, limit={limit}")
+        query = text("SELECT * FROM estado_de_normas ORDER BY id_estado_norma ASC LIMIT :limit OFFSET :skip")
+        result = db.execute(query, {"skip": skip, "limit": limit}).mappings().all()
+        logger.info(f"Query ejecutado exitosamente, registros obtenidos: {len(result)}")
+        return result
     except SQLAlchemyError as e:
         logger.error(f"Error listar_estado_normas: {e}")
+        raise Exception(str(e))
+    except Exception as e:
+        logger.error(f"Error inesperado en listar_estado_normas: {e}")
         raise Exception(str(e))
 
 
