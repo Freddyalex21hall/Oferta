@@ -2,9 +2,9 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 class CatalogoBase(BaseModel):
-    nombre_catalogo: str = Field(min_length=3, max_length=100)
+    nombre_catalogo: str = Field(min_length=3, max_length=255)
     descripcion: Optional[str] = Field(default=None, max_length=500)
-    cod_catalogo: Optional[str] = Field(default=None, max_length=50)
+    cod_catalogo: Optional[str] = Field(default=None, max_length=16)
     estado: bool = True
 
 class CrearCatalogo(CatalogoBase):
@@ -17,8 +17,8 @@ class RetornoCatalogo(CatalogoBase):
         from_attributes = True
 
 class EditarCatalogo(BaseModel):
-    nombre_catalogo: Optional[str] = Field(default=None, min_length=3, max_length=100)
+    nombre_catalogo: Optional[str] = Field(default=None, min_length=3, max_length=255)
     descripcion: Optional[str] = Field(default=None, max_length=500)
-    cod_catalogo: Optional[str] = Field(default=None, max_length=50)
+    cod_catalogo: Optional[str] = Field(default=None, max_length=16)
     estado: Optional[bool] = None
 

@@ -8,6 +8,11 @@ from core.database import get_db
 
 router = APIRouter()
 
+@router.get("/obtener-todos", response_model=List[RetornoPrograma])
+def obtener_todos(db: Session = Depends(get_db)):
+    """Obtiene todos los programas de formación disponibles"""
+    return crud_programas.listar_programas(db)
+
 
 @router.get("/listar", response_model=List[RetornoPrograma])
 def listar(db: Session = Depends(get_db)):

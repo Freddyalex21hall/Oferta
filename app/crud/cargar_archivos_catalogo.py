@@ -92,7 +92,6 @@ def insertar_catalogo_programas(db: Session, df_programas):
                 "indice": (s("indice")[:max_len["indice"]] if s("indice") else None),
                 "ocupacion": (s("ocupacion")[:max_len["ocupacion"]] if s("ocupacion") else None),
                 "estado": r.get("estado") if not pd.isna(r.get("estado")) else True,
-                "url_pdf": (s("url_pdf")[:max_len["url_pdf"]] if s("url_pdf") else None),
             }
 
             result = db.execute(insert_programa_sql, params)

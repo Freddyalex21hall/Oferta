@@ -123,6 +123,15 @@ async def upload_excel_registro_calificado(
 
     df = df.rename(columns=columnas_renombrar)
 
+    # ====== RELLENAR CAMPOS VACÍOS CON N/A (excepto fechas y números) ======
+    campos_texto = [col for col in df.columns if col not in [
+        "fecha_radicado", "fecha_resolucion", "fecha_vencimiento", "numero_resolucion"
+    ]]
+    
+    for col in campos_texto:
+        if col in df.columns:
+            df[col] = df[col].fillna("N/A").apply(lambda x: "N/A" if (isinstance(x, str) and x.strip() == "") else x)
+    
     # -----------------------------------------------------
     # 4️⃣ DETECCIÓN FINAL DE cod_programa (a prueba de balas)
     # -----------------------------------------------------
