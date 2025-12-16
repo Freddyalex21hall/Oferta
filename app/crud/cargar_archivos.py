@@ -137,14 +137,12 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
     insert_programa_sql = text("""
         INSERT INTO estado_de_normas (
             cod_programa, cod_version, fecha_elaboracion, anio, red_conocimiento,
-            nombre_ncl, cod_ncl, ncl_version, norma_corte_noviembre,
-            version, norma_version, mesa_sectorial, tipo_norma,
-            observacion, fecha_revision, tipo_competencia, vigencia, fecha_indice
+            nombre_ncl, cod_ncl, ncl_version,
+            observacion, tipo_competencia, vigencia, fecha_indice
         ) VALUES (
             :cod_programa, :cod_version, :fecha_elaboracion, :anio, :red_conocimiento,
-            :nombre_ncl, :cod_ncl, :ncl_version, :norma_corte_noviembre,
-            :version, :norma_version, :mesa_sectorial, :tipo_norma,
-            :observacion, :fecha_revision, :tipo_competencia, :vigencia, :fecha_indice
+            :nombre_ncl, :cod_ncl, :ncl_version,
+            :observacion, :tipo_competencia, :vigencia, :fecha_indice
         )
     """)
 
@@ -163,13 +161,7 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
                 "nombre_ncl": _safe_val(row.get("nombre_ncl") or row.get("NOMBRE_NCL") or row.get("NOMBRE NCL")),
                 "cod_ncl": _to_int_safe(_safe_val(row.get("cod_ncl") or row.get("NCL CODIGO") or row.get("NCL_CODIGO"))),
                 "ncl_version": _to_int_safe(_safe_val(row.get("ncl_version") or row.get("NCL VERSION") or row.get("NCL_VERSION"))),
-                "norma_corte_noviembre": _safe_val(row.get("norma_corte_noviembre")),
-                "version": _safe_val(row.get("la_version")) or _safe_val(row.get("version")),
-                "norma_version": _safe_val(row.get("norma_version") or row.get("NORMA - VERSION")),
-                "mesa_sectorial": _safe_val(row.get("mesa_sectorial") or row.get("Mesa Sectorial")),
-                "tipo_norma": _safe_val(row.get("tipo_norma") or row.get("Tipo de Norma")),
                 "observacion": _safe_val(row.get("observacion") or row.get("Observación") or row.get("OBSERVACION")),
-                "fecha_revision": _parse_date(row.get("fecha_revision") or row.get("Fecha de revisión") or row.get("FECHA DE REVISION")),
                 "tipo_competencia": _safe_val(row.get("tipo_competencia") or row.get("Tipo de competencia")),
                 "vigencia": _safe_val(row.get("vigencia")),
                 "fecha_indice": _parse_date(row.get("fecha_indice") or row.get("fecha_elaboracion_2") or row.get("Fecha de Elaboración"))
@@ -257,13 +249,11 @@ def insertar_estado_normas(db: Session, df_normas):
     insert_sql = text("""
         INSERT INTO estado_de_normas (
             cod_programa, cod_version, fecha_elaboracion, anio, red_conocimiento,
-            nombre_ncl, cod_ncl, ncl_version, norma_corte_noviembre,
-            version, norma_version, mesa_sectorial, tipo_norma,
+            nombre_ncl, cod_ncl, ncl_version,
             observacion, fecha_revision, tipo_competencia, vigencia, fecha_indice
         ) VALUES (
             :cod_programa, :cod_version, :fecha_elaboracion, :anio, :red_conocimiento,
-            :nombre_ncl, :cod_ncl, :ncl_version, :norma_corte_noviembre,
-            :version, :norma_version, :mesa_sectorial, :tipo_norma,
+            :nombre_ncl, :cod_ncl, :ncl_version,
             :observacion, :fecha_revision, :tipo_competencia, :vigencia, :fecha_indice
         )
     """)
@@ -301,13 +291,7 @@ def insertar_estado_normas(db: Session, df_normas):
         nombre_ncl = _safe_val(_get(row, 'nombre_ncl', 'NOMBRE_NCL', 'NOMBRE NCL'))
         cod_ncl = _to_int_safe(_safe_val(_get(row, 'cod_ncl', 'NCL CODIGO', 'NCL_CODIGO')))
         ncl_version = _to_int_safe(_safe_val(_get(row, 'ncl_version', 'NCL VERSION', 'NCL_VERSION')))
-        norma_corte_noviembre = _safe_val(_get(row, 'norma_corte_noviembre', 'Norma corte a NOVIEMBRE'))
-        version = _safe_val(_get(row, 'version', 'Versión', 'VERSION'))
-        norma_version = _safe_val(_get(row, 'norma_version', 'Norma - Versión', 'NORMA - VERSION'))
-        mesa_sectorial = _safe_val(_get(row, 'mesa_sectorial', 'Mesa Sectorial'))
-        tipo_norma = _safe_val(_get(row, 'tipo_norma', 'Tipo de Norma'))
         observacion = _safe_val(_get(row, 'observacion', 'Observación', 'OBSERVACION'))
-        fecha_revision = _parse_date(_get(row, 'fecha_revision', 'Fecha de revisión', 'FECHA DE REVISION'))
         tipo_competencia = _safe_val(_get(row, 'tipo_competencia', 'Tipo de competencia'))
         vigencia = _safe_val(_get(row, 'vigencia', 'Vigencia'))
         fecha_indice = _parse_date(_get(row, 'fecha_elaboracion_2', 'Fecha de Elaboración', 'fecha_elaboracion_2'))
@@ -326,13 +310,7 @@ def insertar_estado_normas(db: Session, df_normas):
             "nombre_ncl": nombre_ncl,
             "cod_ncl": cod_ncl,
             "ncl_version": ncl_version,
-            "norma_corte_noviembre": norma_corte_noviembre,
-            "version": version,
-            "norma_version": norma_version,
-            "mesa_sectorial": mesa_sectorial,
-            "tipo_norma": tipo_norma,
             "observacion": observacion,
-            "fecha_revision": fecha_revision,
             "tipo_competencia": tipo_competencia,
             "vigencia": vigencia,
             "fecha_indice": fecha_indice,
@@ -365,7 +343,7 @@ def insertar_estado_normas(db: Session, df_normas):
             insertados += 1
         except IntegrityError as ie:
             # IntegrityError, intentar crear placeholder en programas_formacion si es FK faltante
-            errstr = str(ie._dict_.get('orig') or ie)
+            errstr = str(ie.__dict__.get('orig') or ie)
             logger.warning(f"IntegrityError al insertar norma: {errstr}; intentando crear placeholder de programa")
             try:
                 # Tras un IntegrityError la transacción puede quedar en estado erróneo; hacer rollback antes.
@@ -399,7 +377,7 @@ def insertar_estado_normas(db: Session, df_normas):
                     insertados += 1
                 except SQLAlchemyError as e2:
                     db.rollback()
-                    err2 = str(e2._dict_.get('orig') or e2)
+                    err2 = str(e2.__dict__.get('orig') or e2)
                     errores.append({"error": err2})
                     logger.exception(f"Error insertando norma tras crear placeholder: {err2}")
             except Exception as e_ph:
@@ -409,7 +387,7 @@ def insertar_estado_normas(db: Session, df_normas):
                 logger.exception(f"No se pudo crear placeholder para programa: {errph}")
         except SQLAlchemyError as e:
             db.rollback()
-            errstr = str(e._dict_.get('orig') or e)
+            errstr = str(e.__dict__.get('orig') or e)
             errores.append({"error": errstr})
             logger.exception(f"Error insertando norma en fila: {errstr}")
 

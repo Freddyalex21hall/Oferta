@@ -140,25 +140,23 @@ CREATE TABLE IF NOT EXISTS `historico`(
 );
 
 CREATE TABLE IF NOT EXISTS `estado_de_normas` (
-    `id_estado_norma` MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id_estado_norma` MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `cod_programa` VARCHAR(16) NOT NULL,
+    `version_prog` TINYINT UNSIGNED,
     `cod_version` VARCHAR(50) NULL,
+    `tipo_programa` VARCHAR(30),
+    `nivel_formacion` VARCHAR(30),
+    `nombre_programa` VARCHAR(255),
+    `estado_programa` VARCHAR(50),
     `fecha_elaboracion` DATE NULL,
     `anio` SMALLINT NULL,
     `red_conocimiento` VARCHAR(150),
     `nombre_ncl` VARCHAR(150),
     `cod_ncl` INT,
     `ncl_version` SMALLINT,
-    `norma_corte_noviembre` VARCHAR(150),
-    `version` INT,
-    `norma_version` VARCHAR(100),
-    `mesa_sectorial` VARCHAR(150),
-    `tipo_norma` VARCHAR(80),
-    `observacion` VARCHAR(255),
-    `fecha_revision` DATE,
     `tipo_competencia` VARCHAR(80),
     `vigencia` VARCHAR(80),
-    `fecha_indice` VARCHAR(80)
+    PRIMARY KEY (`id_estado_norma`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
