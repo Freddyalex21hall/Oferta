@@ -6,9 +6,7 @@ import logging
 import traceback
 from core.database import get_db
 from app.schemas.estado_normas import RetornoEstadoNorma
-from app.schemas.usuarios import RetornoUsuario
 from app.crud import estado_normas as crud_estado
-from app.router.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +18,10 @@ router = APIRouter()
 def listar(
     skip: int = 0,
     limit: int = 50,
-    db: Session = Depends(get_db),
-    user_token: RetornoUsuario = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     try:
-        logger.info(f"Listando estado_normas - skip: {skip}, limit: {limit}, usuario: {user_token.username if hasattr(user_token, 'username') else 'N/A'}")
+        logger.info(f"Listando estado_normas - skip: {skip}, limit: {limit}")
         estado_normas = crud_estado.listar_estado_normas(db, skip=skip, limit=limit)
         logger.info(f"Se encontraron {len(estado_normas)} registros")
         return estado_normas
