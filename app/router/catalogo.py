@@ -71,7 +71,8 @@ async def upload_excel(
     # Convertir fechas a tipo date
     for col in ["fecha_registro", "fecha_activo", "fecha_resolucion"]:
         if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
+            # dayfirst=True para interpretar dd/mm/yyyy correctamente (común en Colombia)
+            df[col] = pd.to_datetime(df[col], dayfirst=True, errors="coerce").dt.date
 
     # Elimina '' y NaN/NaT, solo permite objetos date o None en columnas de fecha
     for col in ["fecha_registro", "fecha_activo", "fecha_resolucion"]:

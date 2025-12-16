@@ -19,17 +19,45 @@ def insertar_catalogo_programas(db: Session, df_programas):
             edad_min_requerida, grado_min_requerido, descripcion_req, resolucion, fecha_resolucion,
             apoyo_fic, creditos, alamedida, linea_tecnologica, red_tecnologica, red_conocimiento,
             modalidad, apuestas_prioritarias, fic, tipo_permiso, multiple_inscripcion, indice,
-            ocupacion, estado, url_pdf
+            ocupacion, estado
         ) VALUES (
             :cod_programa, :PRF_version, :cod_version, :nombre_programa, :tipo_formacion, :nivel_formacion, :duracion_maxima,
             :dur_etapa_lectiva, :dur_etapa_productiva, :fecha_registro, :fecha_activo,
             :edad_min_requerida, :grado_min_requerido, :descripcion_req, :resolucion, :fecha_resolucion,
             :apoyo_fic, :creditos, :alamedida, :linea_tecnologica, :red_tecnologica, :red_conocimiento,
             :modalidad, :apuestas_prioritarias, :fic, :tipo_permiso, :multiple_inscripcion, :indice,
-            :ocupacion, :estado, :url_pdf
+            :ocupacion, :estado
         )
         ON DUPLICATE KEY UPDATE 
-            cod_version = VALUES(cod_version)
+            cod_version = VALUES(cod_version),
+            PRF_version = VALUES(PRF_version),
+            nombre_programa = VALUES(nombre_programa),
+            tipo_formacion = VALUES(tipo_formacion),
+            nivel_formacion = VALUES(nivel_formacion),
+            duracion_maxima = VALUES(duracion_maxima),
+            dur_etapa_lectiva = VALUES(dur_etapa_lectiva),
+            dur_etapa_productiva = VALUES(dur_etapa_productiva),
+            fecha_registro = VALUES(fecha_registro),
+            fecha_activo = VALUES(fecha_activo),
+            edad_min_requerida = VALUES(edad_min_requerida),
+            grado_min_requerido = VALUES(grado_min_requerido),
+            descripcion_req = VALUES(descripcion_req),
+            resolucion = VALUES(resolucion),
+            fecha_resolucion = VALUES(fecha_resolucion),
+            apoyo_fic = VALUES(apoyo_fic),
+            creditos = VALUES(creditos),
+            alamedida = VALUES(alamedida),
+            linea_tecnologica = VALUES(linea_tecnologica),
+            red_tecnologica = VALUES(red_tecnologica),
+            red_conocimiento = VALUES(red_conocimiento),
+            modalidad = VALUES(modalidad),
+            apuestas_prioritarias = VALUES(apuestas_prioritarias),
+            fic = VALUES(fic),
+            tipo_permiso = VALUES(tipo_permiso),
+            multiple_inscripcion = VALUES(multiple_inscripcion),
+            indice = VALUES(indice),
+            ocupacion = VALUES(ocupacion),
+            estado = VALUES(estado)
     """)
     
     for idx, row in df_programas.iterrows():
@@ -58,7 +86,6 @@ def insertar_catalogo_programas(db: Session, df_programas):
                 "tipo_permiso": 30,
                 "indice": 240,  # truncar a 240 para margen con utf8mb4
                 "ocupacion": 60,
-                "url_pdf": 250,
             }
 
             params = {

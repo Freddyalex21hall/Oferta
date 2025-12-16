@@ -28,14 +28,28 @@ def _map_programa(r):
     if cod_programa is None:
         return None
     
+    # Helper para obtener valor o fallback, respetando 0 como valor válido
+    def get_val(key, fallback_key=None):
+        val = r.get(key)
+        if val is not None:
+            return val
+        if fallback_key:
+            return r.get(fallback_key)
+        return None
+
+    # Lógica específica para duraciones: si es None, buscar fallback. Si es 0, mantener 0.
+    duracion_programa = r.get("dur_etapa_productiva")
+    if duracion_programa is None:
+        duracion_programa = r.get("duracion_maxima") or r.get("duracion_programa")
+
     return {
         "cod_programa": str(cod_programa),
         "version": r.get("cod_version") or r.get("PRF_version") or r.get("version"),
         "nombre": r.get("nombre_programa") or r.get("nombre"),
         "nivel": r.get("nivel_formacion") or r.get("nivel"),
-        "meses_duracion": r.get("duracion_maxima") or r.get("meses_duracion"),
+        "meses_duracion": get_val("duracion_maxima", "meses_duracion"),
         "fecha_resolucion": r.get("fecha_resolucion"),
-        "duracion_programa": r.get("dur_etapa_productiva") or r.get("duracion_maxima") or r.get("duracion_programa"),
+        "duracion_programa": duracion_programa,
         "unidad_medida": r.get("alamedida") or r.get("unidad_medida"),
         "estado": r.get("estado"),
         "tipo_programa": r.get("tipo_formacion") or r.get("tipo_programa"),
@@ -50,11 +64,11 @@ def crear_programa(db: Session, programa: CrearPrograma) -> bool:
             INSERT INTO programas_formacion (
                 version, nombre, nivel, meses_duracion,
                 duracion_programa, unidad_medida, estado,
-                tipo_programa, url_pdf, red_conocimiento, programa_especial
+                tipo_programa, red_conocimiento, programa_especial
             ) VALUES (
                 :version, :nombre, :nivel, :meses_duracion,
                 :duracion_programa, :unidad_medida, :estado,
-                :tipo_programa, :url_pdf, :red_conocimiento, :programa_especial
+                :tipo_programa, :red_conocimiento, :programa_especial
             )
         """)
         db.execute(query, data)
@@ -69,23 +83,11 @@ def listar_programas(db: Session):
     try:
         query = text("SELECT * FROM programas_formacion ORDER BY cod_programa ASC")
         rows = db.execute(query).mappings().all()
-        # Map DB column names to API response fields expected by RetornoPrograma
         mapped = []
         for r in rows:
-            mapped.append({
-                "cod_programa": str(r.get("cod_programa")) if r.get("cod_programa") is not None else None,
-                "version": r.get("cod_version") or (str(r.get("PRF_version")) if r.get("PRF_version") is not None else None),
-                "nombre": r.get("nombre_programa") or r.get("nombre"),
-                "nivel": r.get("nivel_formacion") or r.get("nivel"),
-                "meses_duracion": r.get("duracion_maxima"),
-                "duracion_programa": r.get("dur_etapa_productiva") or r.get("duracion_maxima"),
-                "unidad_medida": r.get("alamedida") or r.get("unidad_medida"),
-                "estado": r.get("estado"),
-                "tipo_programa": r.get("tipo_formacion") or r.get("tipo_programa"),
-                "url_pdf": r.get("url_pdf"),
-                "red_conocimiento": r.get("red_conocimiento"),
-                "programa_especial": r.get("programa_especial")
-            })
+            mapped_item = _map_programa(r)
+            if mapped_item:
+                mapped.append(mapped_item)
         return mapped
     except SQLAlchemyError as e:
         logger.error(f"Error listar_programas: {e}")
@@ -97,20 +99,7 @@ def obtener_programa_por_id(db: Session, cod_programa: int):
         r = db.execute(query, {"id": cod_programa}).mappings().first()
         if not r:
             return None
-        return {
-            "cod_programa": str(r.get("cod_programa")) if r.get("cod_programa") is not None else None,
-            "version": r.get("cod_version") or (str(r.get("PRF_version")) if r.get("PRF_version") is not None else None),
-            "nombre": r.get("nombre_programa") or r.get("nombre"),
-            "nivel": r.get("nivel_formacion") or r.get("nivel"),
-            "meses_duracion": r.get("duracion_maxima"),
-            "duracion_programa": r.get("dur_etapa_productiva") or r.get("duracion_maxima"),
-            "unidad_medida": r.get("alamedida") or r.get("unidad_medida"),
-            "estado": r.get("estado"),
-            "tipo_programa": r.get("tipo_formacion") or r.get("tipo_programa"),
-            "url_pdf": r.get("url_pdf"),
-            "red_conocimiento": r.get("red_conocimiento"),
-            "programa_especial": r.get("programa_especial")
-        }
+        return _map_programa(r)
     except SQLAlchemyError as e:
         logger.error(f"Error obtener_programa_por_id: {e}")
         raise Exception("Error de base de datos al obtener programa")
@@ -160,20 +149,9 @@ def get_programas_by_nivel(db: Session, nivel: str):
             rows = db.execute(query, {"nivel": nivel}).mappings().all()
         mapped = []
         for r in rows:
-            mapped.append({
-                "cod_programa": str(r.get("cod_programa")) if r.get("cod_programa") is not None else None,
-                "version": r.get("cod_version") or (str(r.get("PRF_version")) if r.get("PRF_version") is not None else None),
-                "nombre": r.get("nombre_programa") or r.get("nombre"),
-                "nivel": r.get("nivel_formacion") or r.get("nivel"),
-                "meses_duracion": r.get("duracion_maxima"),
-                "duracion_programa": r.get("dur_etapa_productiva") or r.get("duracion_maxima"),
-                "unidad_medida": r.get("alamedida") or r.get("unidad_medida"),
-                "estado": r.get("estado"),
-                "tipo_programa": r.get("tipo_formacion") or r.get("tipo_programa"),
-                "url_pdf": r.get("url_pdf"),
-                "red_conocimiento": r.get("red_conocimiento"),
-                "programa_especial": r.get("programa_especial")
-            })
+            mapped_item = _map_programa(r)
+            if mapped_item:
+                mapped.append(mapped_item)
         return mapped
     except SQLAlchemyError as e:
         logger.error(f"Error get_programas_by_nivel: {e}")
