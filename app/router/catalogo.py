@@ -1,9 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from typing import List
 import pandas as pd
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from io import BytesIO
 from app.crud.cargar_archivos_catalogo import insertar_datos_en_bd, insertar_municipios, insertar_catalogo_programas
+from app.crud import catalogo as crud_catalogo
+from app.schemas.catalogo import RetornoCatalogo
 from core.database import get_db
 
 router = APIRouter()
@@ -78,6 +81,12 @@ async def upload_excel(
     # Derivar el campo estado
     df['estado'] = df['fecha_activo'].notnull()
 
+    # Reemplazar campos vacíos con "N/A" por defecto
+    campos_n_a = ['edad_min_requerida', 'grado_min_requerido', 'descripcion_req', 'resolucion']
+    for col in campos_n_a:
+        if col in df.columns:
+            df[col] = df[col].fillna('N/A').apply(lambda x: 'N/A' if (isinstance(x, str) and x.strip() == '') else x)
+
     # Campos a insertar
     final_fields = [
         "cod_programa", "PRF_version", "cod_version", "tipo_formacion", "nombre_programa",
@@ -87,16 +96,13 @@ async def upload_excel(
         "red_tecnologica", "red_conocimiento", "modalidad", "apuestas_prioritarias", "fic", "tipo_permiso",
         "multiple_inscripcion", "indice", "ocupacion", "estado"
     ]
-    if "url_pdf" not in df.columns:
-        df["url_pdf"] = ""
-    final_fields.append("url_pdf")
 
     df_programas = df[final_fields].drop_duplicates()
 
-    # Para los campos STRING (excepto fechas), puedes usar .fillna("") (opcional)
+   # Rellenar todos los campos vacíos con "N/A" (excepto fechas)
     for col in df_programas.columns:
         if col not in ["fecha_registro", "fecha_activo", "fecha_resolucion"]:
-            df_programas[col] = df_programas[col].fillna("")
+            df_programas[col] = df_programas[col].fillna("N/A").apply(lambda x: "N/A" if (isinstance(x, str) and x.strip() == "") else x)
 
     resultados = insertar_catalogo_programas(db, df_programas)
     return resultados
@@ -201,3 +207,31 @@ async def upload_excel_catalogo(
         resultados["municipios"] = {"mensaje": "No se encontraron columnas de municipios"}
 
     return resultados
+
+# Endpoints GET para obtener datos de catálogo
+@router.get("/obtener-todos", response_model=List[RetornoCatalogo])
+def obtener_todos_catalogos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Obtiene todos los catálogos"""
+    return crud_catalogo.get_all_catalogos(db, skip, limit)
+
+
+@router.get("/{id_catalogo}", response_model=RetornoCatalogo)
+def obtener_catalogo_por_id(id_catalogo: int, db: Session = Depends(get_db)):
+    """Obtiene un catálogo por ID"""
+    catalogo = crud_catalogo.get_catalogo_by_id(db, id_catalogo)
+    if not catalogo:
+        raise HTTPException(status_code=404, detail="Catálogo no encontrado")
+    return catalogo
+
+
+@router.get("/codigo/{cod_catalogo}", response_model=RetornoCatalogo)
+def obtener_catalogo_por_codigo(cod_catalogo: str, db: Session = Depends(get_db)):
+    """Obtiene un catálogo por código"""
+    catalogo = crud_catalogo.get_catalogo_by_codigo(db, cod_catalogo)
+    if not catalogo:
+        raise HTTPException(status_code=404, detail="Catálogo no encontrado")
+    return catalogo
+
+    if not catalogo:
+        raise HTTPException(status_code=404, detail="Catálogo no encontrado")
+    return catalogo

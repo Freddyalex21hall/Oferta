@@ -379,6 +379,41 @@ async def upload_excel_historico(
                 ficha_col = posibles_fichas[0]
             df = df.rename(columns={ficha_col: "ficha"})
             print(f"Columna FICHA encontrada y renombrada desde: {ficha_col}")
+    
+    logger.debug("Columnas mapeadas y renombradas")
+    # ====== RELLENAR CAMPOS VACÍOS CON N/A (excepto campos numéricos y de fecha) ======
+    campos_texto = [col for col in df.columns if col not in [
+        "fecha_inicio", "fecha_fin", "ficha", "id_grupo", "cod_regional", "cod_centro", 
+        "cod_municipio", "duracion_meses", "codigo_estado", "num_aprendices_inscritos",
+        "num_aprendices_matriculados", "num_aprendices_en_transito", "num_aprendices_formacion",
+        "num_aprendices_induccion", "num_aprendices_condicionados", "num_aprendices_aplazados",
+        "num_aprendices_retirado_voluntario", "num_aprendices_cancelados", "num_aprendices_reprobados",
+        "num_aprendices_no_aptos", "num_aprendices_reingresados", "num_aprendices_por_certificar",
+        "num_aprendices_certificados", "num_aprendices_trasladados"
+    ]]
+    
+    for col in campos_texto:
+        if col in df.columns:
+            df[col] = df[col].fillna("N/A").apply(lambda x: "N/A" if (isinstance(x, str) and x.strip() == "") else x)
+
+    if "ficha" not in df.columns:
+        posibles_fichas = []
+        for col in df.columns:
+            col_upper = col.upper().strip()
+            if any(keyword in col_upper for keyword in ["FICHA", "IDENTIFICADOR", "ID_GRUPO", "CODIGO_FICHA", "NUMERO_FICHA"]):
+                posibles_fichas.append(col)
+        
+        if posibles_fichas:
+            ficha_col = None
+            for col in posibles_fichas:
+                col_upper = col.upper().strip()
+                if "FICHA" in col_upper and "IDENTIFICADOR" not in col_upper:
+                    ficha_col = col
+                    break
+            if not ficha_col:
+                ficha_col = posibles_fichas[0]
+            df = df.rename(columns={ficha_col: "ficha"})
+            print(f"Columna FICHA encontrada y renombrada desde: {ficha_col}")
 
     logger.debug("Columnas mapeadas y renombradas")
 

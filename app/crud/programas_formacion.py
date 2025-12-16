@@ -22,6 +22,27 @@ def _existing_columns(db: Session, table: str, candidates: list) -> list:
     except Exception:
         return []
 
+def _map_programa(r):
+    """Mapea una fila de la base de datos a formato de RetornoPrograma"""
+    cod_programa = r.get("cod_programa")
+    if cod_programa is None:
+        return None
+    
+    return {
+        "cod_programa": str(cod_programa),
+        "version": r.get("cod_version") or r.get("PRF_version") or r.get("version"),
+        "nombre": r.get("nombre_programa") or r.get("nombre"),
+        "nivel": r.get("nivel_formacion") or r.get("nivel"),
+        "meses_duracion": r.get("duracion_maxima") or r.get("meses_duracion"),
+        "fecha_resolucion": r.get("fecha_resolucion"),
+        "duracion_programa": r.get("dur_etapa_productiva") or r.get("duracion_maxima") or r.get("duracion_programa"),
+        "unidad_medida": r.get("alamedida") or r.get("unidad_medida"),
+        "estado": r.get("estado"),
+        "tipo_programa": r.get("tipo_formacion") or r.get("tipo_programa"),
+        "red_conocimiento": r.get("red_conocimiento"),
+        "programa_especial": r.get("programa_especial")
+    }
+
 def crear_programa(db: Session, programa: CrearPrograma) -> bool:
     try:
         data = programa.model_dump()
