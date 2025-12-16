@@ -134,57 +134,33 @@ def insertar_datos_en_bd(db: Session, df_programas, df):
     grupos_actualizados = 0
     errores = []
 
-    # insertar en estado_de_normas.
     insert_programa_sql = text("""
-        INSERT INTO estado_de_normas (
-            cod_programa, cod_version, fecha_elaboracion, anio, red_conocimiento,
-            nombre_ncl, cod_ncl, ncl_version, norma_corte_noviembre,
-            version, norma_version, mesa_sectorial, tipo_norma,
-            observacion, fecha_revision, tipo_competencia, vigencia, fecha_indice
+        INSERT INTO programas_formacion (
+            cod_programa, version, nombre, red_conocimiento
         ) VALUES (
-            :cod_programa, :cod_version, :fecha_elaboracion, :anio, :red_conocimiento,
-            :nombre_ncl, :cod_ncl, :ncl_version, :norma_corte_noviembre,
-            :version, :norma_version, :mesa_sectorial, :tipo_norma,
-            :observacion, :fecha_revision, :tipo_competencia, :vigencia, :fecha_indice
+            :cod_programa, :version, :nombre, :red_conocimiento
         )
+        ON DUPLICATE KEY UPDATE
+            version = VALUES(version),
+            nombre = VALUES(nombre)
     """)
 
 
     for idx, row in df_programas.iterrows():
         try:
-            # Mapear columnas comunes hacia los campos de estado_de_normas
-            cod_programa = _safe_val(row.get("cod_programa") or row.get("COD PROGRAMA"))
-
+            cod_programa = _safe_val(row.get("cod_programa"))
             data = {
                 "cod_programa": cod_programa,
-                "cod_version": _safe_val(row.get("cod_version") or row.get("CODIGO VERSION") or row.get("cod_version")),
-                "fecha_elaboracion": _parse_date(row.get("fecha_elaboracion") or row.get("Fecha Elaboracion") or row.get("fecha_elaboracion_2")),
-                "anio": _to_int_safe(_safe_val(row.get("anio") or row.get("AÑO") or row.get("ANO"))),
-                "red_conocimiento": _safe_val(row.get("red_conocimiento")) if "red_conocimiento" in row.index else _safe_val(row.get("RED CONOCIMIENTO")),
-                "nombre_ncl": _safe_val(row.get("nombre_ncl") or row.get("NOMBRE_NCL") or row.get("NOMBRE NCL")),
-                "cod_ncl": _to_int_safe(_safe_val(row.get("cod_ncl") or row.get("NCL CODIGO") or row.get("NCL_CODIGO"))),
-                "ncl_version": _to_int_safe(_safe_val(row.get("ncl_version") or row.get("NCL VERSION") or row.get("NCL_VERSION"))),
-                "norma_corte_noviembre": _safe_val(row.get("norma_corte_noviembre")),
                 "version": _safe_val(row.get("la_version")) or _safe_val(row.get("version")),
-                "norma_version": _safe_val(row.get("norma_version") or row.get("NORMA - VERSION")),
-                "mesa_sectorial": _safe_val(row.get("mesa_sectorial") or row.get("Mesa Sectorial")),
-                "tipo_norma": _safe_val(row.get("tipo_norma") or row.get("Tipo de Norma")),
-                "observacion": _safe_val(row.get("observacion") or row.get("Observación") or row.get("OBSERVACION")),
-                "fecha_revision": _parse_date(row.get("fecha_revision") or row.get("Fecha de revisión") or row.get("FECHA DE REVISION")),
-                "tipo_competencia": _safe_val(row.get("tipo_competencia") or row.get("Tipo de competencia")),
-                "vigencia": _safe_val(row.get("vigencia")),
-                "fecha_indice": _parse_date(row.get("fecha_indice") or row.get("fecha_elaboracion_2") or row.get("Fecha de Elaboración"))
+                "nombre": _safe_val(row.get("nombre")),
+                "red_conocimiento": _safe_val(row.get("red_conocimiento")) if "red_conocimiento" in row.index else None,
             }
-
-            # Truncar campos que puedan exceder el tamaño de la columna
-            if data.get("nombre_ncl") and isinstance(data.get("nombre_ncl"), str):
-                data["nombre_ncl"] = data["nombre_ncl"][:150]
-
             db.execute(insert_programa_sql, data)
+            # No confiar en rowcount de forma estricta para inserts con ON DUPLICATE
             programas_insertados += 1
         except SQLAlchemyError as e:
             db.rollback()
-            msg = f"Error al insertar norma (índice {idx}): {e}"
+            msg = f"Error al insertar/actualizar programa (índice {idx}): {e}"
             errores.append(msg)
             logger.exception(msg)
 
