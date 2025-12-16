@@ -54,11 +54,11 @@ CREATE TABLE IF NOT EXISTS `programas_formacion` (
     `dur_etapa_productiva` SMALLINT UNSIGNED,                       -- PRF_DUR_ETAPA_PROD
     `fecha_registro` DATE,                           -- PRF_FCH_REGISTRO
     `fecha_activo` DATE,                           -- Fecha Activo (En Ejecución)
-    `edad_min_requerida` CHAR(2),                       -- PRF_EDAD_MIN_REQUERIDA
+    `edad_min_requerida` CHAR(4),                       -- PRF_EDAD_MIN_REQUERIDA
     `grado_min_requerido` VARCHAR(50),                    -- PRF_GRADO_MIN_REQUERIDO
     `descripcion_req` TEXT,                           -- PRF_DESCRIPCION_REQUISITO
     `resolucion` VARCHAR(250),                    -- PRF_RESOLUCION
-    `fecha_resolucion` DATE,                           -- PRF_FECHA_RESOLUCION
+    `fecha_resolucion` VARCHAR(12),                           -- PRF_FECHA_RESOLUCION
     `apoyo_fic` VARCHAR(2),                     -- PRF_APOYO_FIC
     `creditos` TINYINT UNSIGNED,                            -- PRF_CREDITOS
     `alamedida` VARCHAR(2),                     -- PRF_ALAMEDIDA
@@ -72,9 +72,16 @@ CREATE TABLE IF NOT EXISTS `programas_formacion` (
     `multiple_inscripcion` VARCHAR(2),                     -- Multiple Inscripcion
     `indice` VARCHAR(255),                    
     `ocupacion` VARCHAR(60),                   -- Ocupación
-    `estado` BOOLEAN,
-    `url_pdf` VARCHAR(250),
+    `estado` BOOLEAN NOT NULL DEFAULT TRUE,  -- True = 1 Activo   False = 0 Inactivo
     INDEX idx_nivel_modalidad (`nivel_formacion`, `modalidad`)
+);
+
+CREATE TABLE IF NOT EXISTS `catalogo` (
+    `id_catalogo` INT AUTO_INCREMENT PRIMARY KEY,
+    `cod_catalogo` VARCHAR(16),
+    `nombre_catalogo` VARCHAR(255),
+    `descripcion` TEXT(500),
+    `estado` BOOLEAN NOT NULL DEFAULT TRUE  -- True = 1 Activo   False = 0 Inactivo
 );
 
 
@@ -151,7 +158,7 @@ CREATE TABLE IF NOT EXISTS `estado_de_normas` (
     `vigencia` VARCHAR(80),
     PRIMARY KEY (`id_estado_norma`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
--- FK `fk_programa_norma` intentionally removed to allow inserting estado_de_normas
+
 
 CREATE TABLE IF NOT EXISTS `registro_calificado` (
     `id` INT AUTO_INCREMENT,
