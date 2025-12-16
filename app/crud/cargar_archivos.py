@@ -365,7 +365,7 @@ def insertar_estado_normas(db: Session, df_normas):
             insertados += 1
         except IntegrityError as ie:
             # IntegrityError, intentar crear placeholder en programas_formacion si es FK faltante
-            errstr = str(ie._dict_.get('orig') or ie)
+            errstr = str(ie.__dict__.get('orig') or ie)
             logger.warning(f"IntegrityError al insertar norma: {errstr}; intentando crear placeholder de programa")
             try:
                 # Tras un IntegrityError la transacción puede quedar en estado erróneo; hacer rollback antes.
@@ -399,7 +399,7 @@ def insertar_estado_normas(db: Session, df_normas):
                     insertados += 1
                 except SQLAlchemyError as e2:
                     db.rollback()
-                    err2 = str(e2._dict_.get('orig') or e2)
+                    err2 = str(e2.__dict__.get('orig') or e2)
                     errores.append({"error": err2})
                     logger.exception(f"Error insertando norma tras crear placeholder: {err2}")
             except Exception as e_ph:
@@ -409,7 +409,7 @@ def insertar_estado_normas(db: Session, df_normas):
                 logger.exception(f"No se pudo crear placeholder para programa: {errph}")
         except SQLAlchemyError as e:
             db.rollback()
-            errstr = str(e._dict_.get('orig') or e)
+            errstr = str(e.__dict__.get('orig') or e)
             errores.append({"error": errstr})
             logger.exception(f"Error insertando norma en fila: {errstr}")
 
