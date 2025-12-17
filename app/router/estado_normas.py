@@ -17,7 +17,7 @@ router = APIRouter()
 @router.get("/listar", response_model=List[RetornoEstadoNorma], status_code=status.HTTP_200_OK)
 def listar(
     skip: int = 0,
-    limit: int = 50,
+    limit: int = 5000,
     db: Session = Depends(get_db)
 ):
     try:
