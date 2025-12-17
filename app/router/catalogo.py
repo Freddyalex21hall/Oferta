@@ -61,6 +61,12 @@ async def upload_excel(
 
     # Campos obligatorios para insertar
     required_fields = ["cod_programa", "nombre_programa", "tipo_formacion", "nivel_formacion", "duracion_maxima", "fecha_registro"]
+    
+    # Convertir cadenas vacías o espacios a NaN en campos obligatorios para que dropna funcione
+    for col in required_fields:
+        if col in df.columns:
+            df[col] = df[col].replace(r'^\s*$', float('nan'), regex=True)
+            
     df = df.dropna(subset=required_fields)
 
     # Conversión de tipos numéricos
